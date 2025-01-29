@@ -3,8 +3,8 @@ from poolguy.utils import ColorLogger, loadJSON, MaxSizeDict, cmd_rate_limit, ra
 from poolguy.twitch import CommandBot
 from poolguy.tester import Tester
 from poolguy.twitchws import Alert
-from plugins.obsapiv3 import OBSController
-from plugins.skynet import AI
+from customalerts.plugins.obsapi import OBSController
+from customalerts.plugins.skynet import AI
 import aiofiles
 from aiohttp import web
 
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     fmat = ctxt('%(asctime)s', 'yellow', style='d') + '-%(levelname)s-' + ctxt('[%(name)s]', 'purple', style='d') + ctxt(' %(message)s', 'green', style='d')
     logging.basicConfig(format=fmat, datefmt="%I:%M:%S%p", level=logging.INFO)
     cfg = loadJSON("config.json")
-    cfg['obs_cfg'].update(loadJSON("plugins/auth.json")['OBS'])
+    cfg['obs_cfg'].update(loadJSON("db/auth.json")['OBS'])
     cfg['alert_objs'] = alert_objs
     bot = MyBot(**cfg)
     asyncio.run(bot.start())

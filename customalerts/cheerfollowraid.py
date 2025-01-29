@@ -1,6 +1,7 @@
-from poolguy.utils import json
+from poolguy.utils import json, random
 from poolguy.utils import ColorLogger, loadJSON, aioUpdateFile
 from poolguy.twitchws import Alert
+from .plugins.tts import generate_speech, VOICES
 
 logger = ColorLogger(__name__)
 
@@ -22,6 +23,9 @@ class ChannelCheerAlert(Alert):
             else:
                 alertK = k
         if alertK:
+            if self.data["message"] and amount >= 200:
+                voice = random.choice(list(VOICES.keys()))
+                await generate_speech(self.data['message'], "db/bit_tts.mp3", voice)
             txt = cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
             await self.bot.obsws.set_source_text(textscene, ' '+txt)
             for a in altscenes:
@@ -30,6 +34,9 @@ class ChannelCheerAlert(Alert):
             await self.bot.obsws.set_source_text(textscene, "")
             for a in altscenes:
                 await self.bot.obsws.hide_source(a, scene)
+            if self.data["message"] and amount >= 200:
+                await self.bot.obsws.show_and_wait("bit_tts", scene)
+
 
 
 class ChannelRaidAlert(Alert):

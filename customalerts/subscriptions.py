@@ -1,5 +1,6 @@
-from poolguy.utils import ColorLogger, json
+from poolguy.utils import ColorLogger, json, random
 from poolguy.twitchws import Alert
+from .plugins.tts import generate_speech, VOICES
 
 logger = ColorLogger(__name__)
 
@@ -97,6 +98,10 @@ class ChannelSubscriptionMessageAlert(Alert):
         name = self.data['user_name']
         tier = int(self.data['tier'][0])
         total_months = self.data['cumulative_months']
+        tts_fp = None
+        if self.data["message"]:
+            voice = random.choice(list(VOICES.keys()))
+            tts_fp = await generate_speech(self.data['message']['text'], "db/sub_tts.mp3", voice)
         await self.bot.obsws.set_source_text(textscene, f" {name} has been subscribed for {int(total_months)} months!")
         for a in altscenes:
             await self.bot.obsws.show_source(a, scene)
@@ -104,3 +109,5 @@ class ChannelSubscriptionMessageAlert(Alert):
         await self.bot.obsws.set_source_text(textscene, "")
         for a in altscenes:
             await self.bot.obsws.hide_source(a, scene)
+        if tts_fp:
+            await self.bot.obsws.show_and_wait('sub_tts', scene)
