@@ -1,0 +1,152 @@
+{
+	"c23e3f9f-32bb-4403-a5fe-d17df1e62714": {
+		"name": "bansmall"
+	},
+	"a3678acc-80ab-4d59-a9af-07436d51e833": {
+		"name": "banbig"
+	},
+	"225ba234-322a-439d-b7ed-487c938b9f51": {
+		"name": "cabbage"
+	},
+	"78ecd352-d792-43a7-8aa4-47d71a175942": {
+		"name": "mario.mp3"
+	},
+	"6b90d588-643d-4f8f-b659-43477c1a99d4": {
+		"name": "ctrl_fart"
+	},
+	"e8d90ea8-24e6-4623-9b27-5d826f11767a": {
+		"name": "monke"
+	},
+	"15a9f490-3bd4-4196-a975-a79b10c424df": {
+		"name": "scav"
+	},
+	"11fb105f-d597-45fc-9b80-860d00d761bd": {
+		"name": "kek"
+	},
+	"99ad4d50-ff25-48c4-ac1a-c7a30a6d1578": {
+		"lower_volume": 35,
+		"name": "clowncore"
+	},
+	"1bb6869c-3253-4e02-8330-1a40fe1b282a": {
+		"lower_volume": 35,
+		"name": "TWSS"
+	},
+	"17004fbc-c9ce-4317-96a8-6a3d9561db5c": {
+		"source": "[S] FlashBang",
+		"scene": "[S] Alerts",
+		"delay": 0.5
+	},
+	"ebfbd4dc-95a0-45a7-9708-0d247ea92d71": {
+		"lower_volume": 35,
+		"source": "The Lion",
+		"scene": "[S] Videos"
+	},
+	"2abfda4f-6f0e-4f85-9fe4-903fecb17791": {
+		"source": "YeahBoi",
+		"scene": "[S] Videos"
+	},
+	"383323f9-aee2-4f85-bd67-d5a47027e374": {
+		"lower_volume": 35,
+		"source": "Crybaby",
+		"scene": "[S] Videos"
+	},
+	"2e64b3b8-73ca-475a-8b31-7b41a529f5b4": {
+		"lower_volume": 35,
+		"source": "Delayed",
+		"scene": "[S] Videos"
+	},
+	"1612364d-ea02-4074-bb5f-3e5931bad798": {
+		"lower_volume": 30,
+		"source": "kissmyass",
+		"scene": "[S] Videos"
+	},
+	"54c47cbf-3352-4156-81f2-c7c85bd14c41": {
+		"lower_volume": 30,
+		"source": "LoveEverybody",
+		"scene": "[S] Videos"
+	},
+	"e824616c-41d7-4dd3-b045-25240b0adeaa": {
+		"lower_volume": 30,
+		"source": "Skipatrol",
+		"scene": "[S] Videos"
+	},
+	"59862f47-6758-4cf5-98e3-b2540ddc8c7e": {
+		"lower_volume": 30,
+		"source": "Run Away",
+		"scene": "[S] Videos"
+	},
+	"c03f9b26-56bc-4d2e-8e09-49f270aa619f": {
+		"lower_volume": 30,
+		"source": "gunskill",
+		"scene": "[S] Videos"
+	},
+	"0ab624cb-15d8-4181-94e4-c1a01037dd07": {
+		"lower_volume": 30,
+		"source": "somuchfun",
+		"scene": "[S] Videos"
+	},
+	"d39b2dfd-8324-4df3-ac10-61987ed565f5": {
+		"lower_volume": 30,
+		"source": "flyingpoodle",
+		"scene": "[S] Videos"
+	},
+	"886a146d-1d38-4114-9a06-ef00e03d2416": {
+		"lower_volume": 30,
+		"source": "supplies",
+		"scene": "[S] Videos"
+	},
+	"7c795030-8186-4e5c-983d-ab8fac5b00fc": {
+		"lower_volume": 30,
+		"source": "spraypaint",
+		"scene": "[S] Videos"
+	},
+	"79a5b067-ae5f-4df5-9b21-f20c8458e5a4": {
+		"source": "riverdancing",
+		"scene": "[S] Videos"
+	},
+	"5dfad255-f736-49c7-ba8c-ab672fffe344": {
+		"lower_volume": 25,
+		"source": "turtle",
+		"scene": "[S] Videos"
+	},
+	"f1cff013-176e-4930-b464-f19a12db828a": {
+		"lower_volume": 25,
+		"source": "democracy",
+		"scene": "[S] Videos"
+	},
+	"b7d40663-0b48-4237-a7a2-1aa45d7170ed": {
+		"lower_volume": 30,
+		"source": "goingnowhere",
+		"scene": "[S] Videos"
+	},
+	"3c64cb14-7790-494c-b769-0fa4fa0af2e2": {
+		"lower_volume": 25,
+		"source": "willslap",
+		"scene": "[S] Videos"
+	},
+	"1c4965b2-dc54-4c49-bcca-79d9310f97d8": {
+		"lower_volume": 20,
+		"source": "gimmie",
+		"scene": "[S] Videos"
+	},
+	"d6ecae84-de7a-4680-9ead-d630c4f13823": {
+		"lower_volume": 30,
+		"source": "stupid",
+		"scene": "[S] Videos"
+	},
+	"faf9a494-d449-42ea-9c53-be61db64862f": {
+		"lower_volume": 10,
+		"source": "PPAP",
+		"scene": "[S] Videos"
+	},
+	"fdbc5f51-e9e0-4145-a8c2-542db6cee279": {
+		"lower_volume": 30,
+		"source": "thatshotwill",
+		"scene": "[S] Videos"
+	},
+	"8e14a878-88ad-49e3-8e68-b5144680c0ee": {
+		"lower_volume": 25,
+		"source": "Badgers",
+		"scene": "[S] Videos"
+	}
+}

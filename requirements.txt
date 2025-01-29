@@ -1,0 +1,11 @@
+transformers
+gguf
+accelerate
+pycaw
+pywin32
+spotipy
+keyboard
+pydub
+edge_tts
+simpleobsws
+git+https://github.com/s4w3d0ff/pool-guy.git#egg=pool-guy

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+    body {
+      margin: 0;
+    }
+    #avatar {
+	  position: absolute;
+	  top: 24px;
+	  left: 702px;
+	  width: 250px;
+	  height: 250px;
+	  z-index: 1;
+	  background-color: black;
+	  display: none;
+	}
+    #video {
+      position: absolute;
+      width: 1080px;
+      height: auto;
+      z-index: 0;
+      top: 0;
+      left: 0;
+    }
+	#text {
+	  font-family: 'Bahnschrift';
+	  font-weight: 1000;
+	  font-size: 53px;
+	  text-align: center;
+	  text-transform: uppercase;
+	  font-stretch: 0%;
+	  position: absolute;
+	  z-index: 3;
+	  color: black;
+	  text-shadow: 2px 2px 3px black;
+	  width: 861px;
+	  top: 481px;
+	  display: none;
+	  left: 162px;
+	  background-color: white;
+	}
+  </style>
+</head>
+<body>
+  <span id="text">{{ name }} bit the dust</span>
+  <img id="avatar" src="{{ pic_url }}" onload="startVideo()"></img>
+  <video id="video">
+    <source src="/static/tucker.mp4" type="video/mp4"> 
+  </video>
+  <script>
+    const avatar = document.getElementById('avatar');
+    const video = document.getElementById('video');
+    const text = document.getElementById('text');
+	
+    function startVideo() {
+	  avatar.style.display = 'block';
+	  video.style.display = 'block';
+      text.style.display = 'block';
+      video.play();
+    }
+
+    video.addEventListener('ended', () => {
+	  avatar.style.display = 'none';
+	  video.style.display = 'none';
+      text.style.display = 'none';
+
+      // Send GET request to signal video has ended
+      const endedEndpoint = `http://localhost:5050/alertended`;
+      fetch(endedEndpoint)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .catch(endError => console.error('Alert Ended Error:', endError));
+    });
+  </script>
+</body>
+
+</html>

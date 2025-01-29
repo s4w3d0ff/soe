@@ -1,0 +1,69 @@
+{
+	"http_config": {
+		"redirect_uri": "http://localhost:5050/callback",
+		"scopes": [
+			"channel:moderate", 
+			"channel:read:subscriptions",
+			"channel:read:hype_train",
+			"channel:read:goals",
+			"channel:read:charity",
+			"channel:manage:polls",
+			"channel:manage:raids",
+			"channel:manage:predictions",
+			"channel:manage:broadcast",
+			"channel:manage:redemptions",
+			"channel:manage:moderators",
+			"channel:edit:commercial",
+			"user:read:emotes",
+			"user:read:chat",
+			"user:write:chat",
+			"bits:read",
+			"clips:edit",
+			"moderator:manage:banned_users",
+			"moderator:manage:shoutouts",
+			"moderator:read:followers"
+		]
+	},
+	"ws_config": {
+		"storage_type": "json",
+		"channels": {
+			"channel.channel_points_custom_reward_redemption.add": null,
+			"channel.ban": null,
+			"channel.follow": null,
+			"channel.cheer": null,
+			"channel.raid": null,
+			"channel.chat.notification": null,
+			"channel.chat.message": null,
+			"channel.subscribe": null,
+			"channel.subscription.gift": null,
+			"channel.subscription.message": null,
+			"channel.goal.progress": null,
+			"channel.hype_train.progress": null,
+			"channel.hype_train.end": null
+		},
+		"queue_skip": [
+			"channel.chat.message",
+			"channel.goal.progress",
+			"channel.hype_train.progress",
+			"channel.hype_train.end",
+			"channel.chat.notification"
+		]
+	},
+	"ai_cfg": {
+		"persona": "GenZbot",
+		"model": "Llama323BF16", 
+		"device": "cuda"
+	},
+	"obs_cfg":{
+		"ignore_media": ["RustFlashbang", "Sun Spin", "flies", "fire1", "fire2", "fire3", "fire4"],
+		"media_scenes": ["[S] Videos", "[S] TWSS", "[S] Bit Alerts"]
+	},
+	"goals_cfg": {
+		"name": "mygoal",
+		"total": 84000
+	},
+	"login_browser": {"firefox": "C:\\Program Files\\Mozilla Firefox\\firefox.exe"},
+	"max_retries": 60,
+	"retry_delay": 5,
+	"static_dirs": ["static"]
+}

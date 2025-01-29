@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+	body {
+		background-color: black; 
+		color: white;
+		font-family: 'Bahnschrift'; 
+		font-size: 35px; 
+	}
+	.username {
+		font-weight: 1000; 
+		text-align: left; 
+		text-transform: uppercase; 
+		font-stretch: 25%;
+	}
+	.message {
+		font-stretch: 50%;
+	}
+	.text img {
+		margin-top: -40px;
+	    margin-right: -5px;
+	    margin-bottom: -8px;
+	}
+	.badges {
+		padding: 0px;
+	}
+	.badge {
+		height: 23px;
+	}
+	.fade-in {
+		animation: fadeIn 0.5s ease-in-out;
+	}
+	.fade-out {
+		animation: fadeOut 0.5s ease-in-out;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes fadeOut {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+</style>
+</head>
+<body>
+<div id="chatbox"></div>
+<script>
+    let ws;
+    const STORAGE_KEY = 'chatMessages';
+    const MAX_MESSAGES = 9;
+
+    // Function to load saved messages from localStorage
+    function loadSavedMessages() {
+        const savedMessages = localStorage.getItem(STORAGE_KEY);
+        if (savedMessages) {
+            const messages = JSON.parse(savedMessages);
+            // Display messages in reverse order to maintain chronological order
+            messages.reverse().forEach(message => updateChatbox(message));
+        }
+    }
+
+    // Function to save messages to localStorage
+    function saveMessages(message) {
+        let messages = [];
+        const savedMessages = localStorage.getItem(STORAGE_KEY);
+        
+        if (savedMessages) {
+            messages = JSON.parse(savedMessages);
+        }
+
+        // Add new message to the beginning of the array
+        messages.unshift(message);
+        
+        // Keep only the most recent MAX_MESSAGES
+        if (messages.length > MAX_MESSAGES) {
+            messages = messages.slice(0, MAX_MESSAGES);
+        }
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+
+    // Updated updateChatbox function
+    function updateChatbox(message) {
+        const chatbox = document.getElementById('chatbox');
+        const msgid = message.id;
+        
+        if (!document.getElementById(msgid)) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'fade-in');
+            messageDiv.setAttribute('id', msgid);
+            
+            const badgesSpan = document.createElement('span');
+            badgesSpan.setAttribute('class', 'badges');
+            
+            // Loop through the badges array and create img elements
+            message.badges.forEach(badgeUrl => {
+                const badgeImg = document.createElement('img');
+                badgeImg.setAttribute('src', badgeUrl);
+                badgeImg.setAttribute('class', 'badge');
+                badgesSpan.appendChild(badgeImg);
+            });
+            
+            const usernameSpan = document.createElement('span');
+            usernameSpan.setAttribute('class', 'username');
+            usernameSpan.setAttribute('style', 'color: ' + message.color + ';');
+            usernameSpan.textContent = message.user + ': ';
+            
+            const textSpan = document.createElement('span');
+            textSpan.setAttribute('class', 'text');
+            textSpan.innerHTML = message.text;
+            
+            messageDiv.appendChild(badgesSpan);
+            messageDiv.appendChild(usernameSpan);
+            messageDiv.appendChild(textSpan);
+            
+            // Make sure we dont have more than MAX_MESSAGES messages, removing the oldest
+            const currentMessages = chatbox.getElementsByClassName('message');
+            if (currentMessages.length >= MAX_MESSAGES) {
+                chatbox.removeChild(currentMessages[currentMessages.length - 1]);
+            }
+            
+            chatbox.prepend(messageDiv);
+            
+            // Save the message to localStorage
+            saveMessages(message);
+        }
+    }
+
+    function connectWebSocket() {
+        ws = new WebSocket('ws://localhost:5050/chatws');
+
+        ws.addEventListener('open', () => {
+            console.log('WebSocket connection established');
+        });
+
+        ws.addEventListener('close', () => {
+            console.log('WebSocket connection closed');
+            // Attempt to reconnect after a delay
+            setTimeout(connectWebSocket, 5000);
+        });
+
+        ws.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            updateChatbox(data);
+        });
+    }
+
+    // Load saved messages when the page loads
+    window.addEventListener('load', loadSavedMessages);
+
+    // Start the initial WebSocket connection
+    connectWebSocket();
+</script>
+</body>
+</html>

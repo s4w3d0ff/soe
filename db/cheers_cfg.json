@@ -1,0 +1,102 @@
+{
+	"25": {
+		"source": "fart",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"50": {
+		"source": "Coffee",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"69": {
+		"source": "Fire n ur Butt",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"100": {
+		"source": "angry ticks",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"110": {
+		"source": "Eat Poop",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"120": {
+		"source": "wee wee",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"123": {
+		"source": "massage",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"145": {
+		"source": "45lbs Flip",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"200": {
+		"source": "danksandboarding",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"225": {
+		"source": "Delayed",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"230": {
+		"source": "Run Away",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"235": {
+		"source": "PPAP-short",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"240": {
+		"source": "Crybaby",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"245": {
+		"source": "lost 100 followers",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"275": {
+		"source": "house tour",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"300": {
+		"source": "anusisbleeding",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"315": {
+		"source": "gimmie",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"320": {
+		"source": "egg",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"325": {
+		"source": "master of cabbage",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"420": {
+		"source": "howareyou",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"430": {
+		"source": "conform",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"450": {
+		"source": "PPAP",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"500": {
+		"source": "moneyprinter",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"999": {
+		"source": "donut",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"5000": {
+		"source": "MICLIC",
+		"text": "{user} dropped {amount} bits!"
+	}
+}
