@@ -1,0 +1,47 @@
+@import "root.css";
+
+body {
+	font-family: Silkscreen;
+	margin: 0;
+	padding: 0;
+	background-color: transparent;
+}
+
+#alerts-container {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.alert {
+	background-color: var(--bg-gray);
+	color: var(--text);
+	padding: 15px;
+	border-radius: 5px;
+	border-left: 4px solid var(--accent);
+	width: fit-content;
+	max-width: 80%;
+	position: relative;
+	opacity: 0;
+	transition: all 0.7s ease, transform 0.7s ease;
+}
+
+.alert.show {
+	opacity: 1;
+}
+
+.alert.removing {
+	opacity: 0;
+}
+
+.alert span {
+	margin-right: 10px;
+}
+
+.alert #sys_message {
+	color: var(--accent);
+}

@@ -1,0 +1,52 @@
+@import "root.css";
+
+body {
+	background-color: black; 
+	color: white;
+	font-family: 'Bahnschrift'; 
+	font-size: 35px; 
+}
+.username {
+	font-weight: 1000; 
+	text-align: left; 
+	text-transform: uppercase; 
+	font-stretch: 25%;
+}
+.message {
+	font-stretch: 50%;
+}
+.text img {
+	margin-top: -40px;
+	margin-right: -5px;
+	margin-bottom: -8px;
+}
+.badges {
+	padding: 0px;
+}
+.badge {
+	height: 23px;
+}
+.fade-in {
+	animation: fadeIn 0.5s ease-in-out;
+}
+.fade-out {
+	animation: fadeOut 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes fadeOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
