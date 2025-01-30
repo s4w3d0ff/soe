@@ -1,329 +1,39 @@
-<!DOCTYPE html>
 <html>
 <head>
-    <style>
-		:root {
-			--text: #c5ede5;
-			--bg: #17272bd6;
-			--bg-gray: #234740c7;
-			--border: #00423e;
-			--t1-bg: #54d8be;
-			--t2-bg: #8ddf48;
-			--t3-bg: #4dce86;
-			--bit-bg: #4171e2;
-		}
-		@font-face {
-			font-family: Silkscreen;
-			src: local(Silkscreen-Regular.ttf);
-		}
-		body {
-			color: var(--text);
-			font-family: 'Silkscreen';
-			font-size: 42px;
-			margin: 0;
-		}
-		.goal-container {
-			height: 42px;
-			background-color: var(--bg-gray);
-			border: 3px solid var(--border);
-			position: relative;
-			will-change: contents;
-			backface-visibility: hidden;
-			transform: translateZ(0);
-		}
-		.progress-segment {
-			height: 100%;
-			float: left;
-			position: relative;
-			text-align: center;
-			width: 0;
-			will-change: width;
-		}
-		.progress-segment.animated {
-			transition: width 3s cubic-bezier(0.4, 0, 0.2, 1);
-		}
-        .segment-label {
-			color: var(--text);
-			font-family: 'Silkscreen';
-			font-size: 15px;
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            line-height: 30px;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .total-progress {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #333;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-		.segment-t1_subs { background-color: var(--t1-bg); }
-		.segment-t2_subs { background-color: var(--t2-bg); }
-		.segment-t3_subs { background-color: var(--t3-bg); }
-		.segment-bits { background-color: var(--bit-bg); }
-
-		.legend-container {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			padding: 2px 10px;
-			border: 3px solid var(--border);
-			border-bottom-width: 0px;
-			border-radius: 15px 15px 0 0;
-			background-color: var(--bg);
-		}
-
-		.legend-items {
-			display: flex;
-			gap: 69px;
-		}
-
-		.legend-item {
-			display: flex;
-			align-items: center;
-			gap: 5px;
-		}
-
-		.color-dot {
-			width: 20px;
-			height: 20px;
-			border-radius: 50%;
-			display: inline-block;
-		}
-
-		.color-dot.t1_subs { background-color: var(--t1-bg); }
-		.color-dot.t2_subs { background-color: var(--t2-bg); }
-		.color-dot.t3_subs { background-color: var(--t3-bg); }
-		.color-dot.bits { background-color: var(--bit-bg); }
-    </style>
+	<link rel="stylesheet" href="static/css/goals.css">
+	<script src="static/js/websocket-utils.js"></script>
+	<script src="static/js/goals.js"></script>
 </head>
 <body>
     <div id="mygoal"></div>
+	<script>
+		// Create a map to store goal bars
+		const goalBars = new Map();
 
-    <script>
-		function formatUSD(cents) {
-			// Convert cents to dollars and format as USD
-			const dollars = (cents / 100).toFixed(2);
-			return `$${dollars.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
-		}
-        class GoalBar {
-            constructor(containerId, goalTotal = 100000) {
-                this.container = document.getElementById(containerId);
-                if (!this.container) {
-                    console.error(`Container with ID "${containerId}" not found`);
-                    return;
-                }
-                this.goalTotal = goalTotal;
-                this.segments = new Map(); // Using Map to store segments by type
-            }
-
-            updateGoalTotal(newTotal) {
-                if (!this.container) return;
-                this.goalTotal = newTotal;
-                this.render();
-            }
-			updateSegment(type, amount) {
-				if (!this.container) return;
-				
-				// Store the previous value for animation
-				const previousValue = this.segments.has(type) ? this.segments.get(type).value : 0;
-				
-				if (!this.segments.has(type)) {
-					this.segments.set(type, {
-						value: amount,  // Set the value directly to amount
-						label: type,
-						targetValue: amount,
-						element: null
-					});
-				} else {
-					const segment = this.segments.get(type);
-					segment.value = amount;  // Update the value
-					segment.targetValue = amount;
-				}
-
-				// Only render initially if this is the first segment
-				if (this.segments.size === 1) {
-					this.render();
-				} else {
-					this.updateSegmentWidth(type);
+		const ws = createWebSocketConnection('/goalsws', (data) => {
+			console.log('Received data:', data); // Debug log
+			
+			// Get or create the goal bar
+			if (!goalBars.has(data.bar)) {
+				const goalBar = new GoalBar(data.bar);
+				if (goalBar.container) {
+					goalBars.set(data.bar, goalBar);
 				}
 			}
-			updateSegmentWidth(type) {
-				const segment = this.segments.get(type);
-				if (!segment) return;
-
-				// Update the legend
-				const legend = this.createLegend();
-				const oldLegend = this.container.querySelector('.legend-container');
-				if (oldLegend) {
-					this.container.replaceChild(legend, oldLegend);
-				}
-
-				// Find existing segment element or create it if it doesn't exist
-				let segmentElement = this.container.querySelector(`.segment-${type}`);
-				const isNewSegment = !segmentElement;
-				
-				if (isNewSegment) {
-					// If the segment element doesn't exist, we need to create it
-					const goalBar = this.container.querySelector('.goal-container');
-					if (!goalBar) {
-						this.render(); // Full render if goal bar doesn't exist
-						return;
-					}
-					segmentElement = document.createElement('div');
-					segmentElement.className = `progress-segment segment-${type}`;
-					segmentElement.style.width = '0%';  // Only set to 0% for new segments
-					goalBar.appendChild(segmentElement);
-				}
-
-				// Calculate new width
-				const percentWidth = (segment.value / this.goalTotal * 100);
-				
-				// Update width with animation
-				requestAnimationFrame(() => {
-					if (isNewSegment) {
-						// For new segments, add animation class after initial width of 0% is rendered
-						requestAnimationFrame(() => {
-							segmentElement.classList.add('animated');
-							segmentElement.style.width = `${percentWidth}%`;
-						});
-					} else {
-						// For existing segments, just update to the new width
-						// The animation class should already be present
-						segmentElement.style.width = `${percentWidth}%`;
-					}
-				});
+			
+			const goalBar = goalBars.get(data.bar);
+			if (!goalBar) {
+				console.error(`Goal bar "${data.bar}" not found or could not be created`);
+				return;
 			}
 
-            getProgressTotal() {
-                let total = 0;
-                for (let segment of this.segments.values()) {
-                    total += segment.value;
-                }
-                return total;
-            }
-			createLegend() {
-				const legendContainer = document.createElement('div');
-				legendContainer.className = 'legend-container';
-
-				const legendItems = document.createElement('div');
-				legendItems.className = 'legend-items';
-
-				// Create legend items for each segment
-				for (let [type, segment] of this.segments) {
-					const legendItem = document.createElement('div');
-					legendItem.className = 'legend-item';
-
-					const colorDot = document.createElement('span');
-					colorDot.className = `color-dot ${type}`;
-
-					const label = document.createElement('span');
-					const percentOfTotal = (segment.value / this.goalTotal * 100).toFixed(1);
-					label.textContent = `${type} ${percentOfTotal}%`;
-
-					legendItem.appendChild(colorDot);
-					legendItem.appendChild(label);
-					legendItems.appendChild(legendItem);
-				}
-
-				// Add total progress to the right
-				const totalProgress = document.createElement('div');
-				const progressTotal = this.getProgressTotal();
-				const totalProgressPercent = (progressTotal / this.goalTotal * 100).toFixed(1);
-				totalProgress.textContent = `Monthly Goal: ${totalProgressPercent}% (${formatUSD(progressTotal)}/${formatUSD(this.goalTotal)})`;
-
-				legendContainer.appendChild(legendItems);
-				legendContainer.appendChild(totalProgress);
-
-				return legendContainer;
+			// Handle the message
+			if (data.progress_type === 'total') {
+				goalBar.updateGoalTotal(data.amount);
+			} else {
+				goalBar.updateSegment(data.progress_type, data.amount);
 			}
-			render() {
-				if (!this.container) return;
-				
-				this.container.innerHTML = '';
-				const legend = this.createLegend();
-				this.container.appendChild(legend);
-
-				const goalBar = document.createElement('div');
-				goalBar.className = 'goal-container';
-
-				// Add all segments with their current widths
-				for (let [type, segment] of this.segments) {
-					const percentWidth = (segment.value / this.goalTotal * 100);
-					
-					const progressSegment = document.createElement('div');
-					progressSegment.className = `progress-segment segment-${type}`;
-					progressSegment.style.width = `${percentWidth}%`; // Set width immediately
-					progressSegment.classList.add('animated');
-					goalBar.appendChild(progressSegment);
-				}
-
-				this.container.appendChild(goalBar);
-			}
-		}
-        // Create a map to store goal bars
-        const goalBars = new Map();
-
-        let ws;
-
-        function connectWebSocket() {
-            ws = new WebSocket('ws://' + window.location.host + '/goalsws');
-
-            ws.addEventListener('open', () => {
-                console.log('WebSocket connection established');
-            });
-
-            ws.addEventListener('error', (error) => {
-                console.error('WebSocket error:', error);
-            });
-
-            ws.addEventListener('close', () => {
-                console.log('WebSocket connection closed');
-                // Attempt to reconnect after a delay
-                setTimeout(connectWebSocket, 3000);
-            });
-
-            ws.addEventListener('message', (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    console.log('Received data:', data); // Debug log
-                    
-                    // Get or create the goal bar
-                    if (!goalBars.has(data.bar)) {
-                        const goalBar = new GoalBar(data.bar);
-                        if (goalBar.container) { // Only store if container exists
-                            goalBars.set(data.bar, goalBar);
-                        }
-                    }
-                    
-                    const goalBar = goalBars.get(data.bar);
-                    if (!goalBar) {
-                        console.error(`Goal bar "${data.bar}" not found or could not be created`);
-                        return;
-                    }
-
-                    // Handle the message
-                    if (data.progress_type === 'total') {
-                        goalBar.updateGoalTotal(data.amount);
-                    } else {
-                        goalBar.updateSegment(data.progress_type, data.amount);
-                    }
-                } catch (error) {
-                    console.error('Error processing message:', error);
-                }
-            });
-        }
-
-        // Start the initial WebSocket connection
-        connectWebSocket();
-    </script>
+		});
+	</script>
 </body>
 </html>
