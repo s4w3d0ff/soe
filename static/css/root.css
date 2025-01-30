@@ -1,0 +1,14 @@
+:root {
+	--text: #c5ede5;
+	--bg: #17272bd6;
+	--bg-gray: #234740c7;
+	--border: #00423e;
+	--prime: #00241b;
+	--second: #004447;
+	--accent: #008DA8;
+}
+
+@font-face {
+	font-family: Silkscreen;
+	src: local(static/fonts/Silkscreen-Regular.ttf);
+}
