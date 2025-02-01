@@ -1,8 +1,9 @@
 from poolguy.utils import ColorLogger, json, random, asyncio
 from poolguy.twitchws import Alert
 import aiofiles
+from .plugins.spotifyapi import duck_volume
 
-logger = ColorLogger("BanAlert")
+logger = ColorLogger(__name__)
 
 class ChannelBanAlert(Alert):
     """channel.ban"""
@@ -46,7 +47,8 @@ class ChannelBanAlert(Alert):
         except Exception as e:
             logger.error(f"[Alert] Ban: Error rendering template: {e}")
             return ""
-        
+    
+    @duck_volume(volume=50)
     async def process(self):
         self.bot.alertDone = False
         logger.debug(f"[Alert] Ban: \n{json.dumps(self.data, indent=2)}")

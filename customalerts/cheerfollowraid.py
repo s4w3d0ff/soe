@@ -2,6 +2,7 @@ from poolguy.utils import json, random
 from poolguy.utils import ColorLogger, loadJSON, aioUpdateFile
 from poolguy.twitchws import Alert
 from .plugins.tts import generate_speech, VOICES
+from .plugins.spotifyapi import duck_volume
 
 logger = ColorLogger(__name__)
 
@@ -12,6 +13,7 @@ textscene = "CheerText"
 
 class ChannelCheerAlert(Alert):
     """channel.cheer"""
+    @duck_volume(volume=50)
     async def process(self):
         logger.debug(f"[Bot] Cheer: \n{json.dumps(self.data, indent=2)}")
         usr = "Anonymous" if self.data['is_anonymous'] else self.data['user_name']
@@ -41,6 +43,7 @@ class ChannelCheerAlert(Alert):
 
 class ChannelRaidAlert(Alert):
     """channel.raid"""
+    @duck_volume(volume=50)
     async def process(self):
         raidFrom = self.data['from_broadcaster_user_name']
         raidTo = self.data['to_broadcaster_user_name']
@@ -59,6 +62,7 @@ class ChannelRaidAlert(Alert):
 
 class ChannelFollowAlert(Alert):
     """channel.follow"""
+    @duck_volume(volume=50)
     async def process(self):
         uname = self.data['user_name']
         logger.info(f"[Bot] {uname} followed!")

@@ -1,6 +1,7 @@
 from poolguy.utils import ColorLogger, json, random
 from poolguy.twitchws import Alert
 from .plugins.tts import generate_speech, VOICES
+from .plugins.spotifyapi import duck_volume
 
 logger = ColorLogger(__name__)
 
@@ -10,6 +11,7 @@ textscene = "CheerText"
 
 class ChannelSubscribeAlert(Alert):
     """channel.subscribe"""
+    @duck_volume(volume=50)
     async def process(self):
         logger.error(f"{self.alert_type}:\n{json.dumps(self.data, indent=2)}")
         """
@@ -39,6 +41,7 @@ class ChannelSubscribeAlert(Alert):
 
 class ChannelSubscriptionGiftAlert(Alert):
     """channel.subscription.gift"""
+    @duck_volume(volume=50)
     async def process(self):
         logger.error(f"{self.alert_type}:\n{json.dumps(self.data, indent=2)}")
         """
@@ -69,6 +72,7 @@ class ChannelSubscriptionGiftAlert(Alert):
 
 class ChannelSubscriptionMessageAlert(Alert):
     """channel.subscription.message"""
+    @duck_volume(volume=50)
     async def process(self):
         logger.error(f"{self.alert_type}:\n{json.dumps(self.data, indent=2)}")
         """
