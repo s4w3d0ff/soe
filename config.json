@@ -55,8 +55,23 @@
 		"device": "cuda"
 	},
 	"obs_cfg":{
+		"host": "localhost",
+		"port": "8989",
+		"password": "xwpassworduG",
 		"ignore_media": ["RustFlashbang", "Sun Spin", "flies", "fire1", "fire2", "fire3", "fire4"],
 		"media_scenes": ["[S] Videos", "[S] TWSS", "[S] Bit Alerts"]
+	},
+	"spotify_cfg": {
+		"client_id": "123b0d5client_id4fcfcb05",
+		"client_secret": "d27cclient_secret5dc1234", 
+		"redirect_uri": "http://localhost:8080",
+		"scope" : [
+			"user-read-currently-playing", 
+			"user-modify-playback-state",
+			"user-read-playback-state",
+			"playlist-modify-public", 
+			"playlist-modify-private"
+			]
 	},
 	"goals_cfg": {
 		"name": "mygoal",
