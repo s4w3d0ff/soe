@@ -10,6 +10,7 @@ class OBSController:
         self.media_scenes = media_scenes
         self._connected = False
         self.wait_for_event = None
+        self.wait_for = None
         
     async def _setup(self):
         """ Create connection and do setup """
@@ -36,19 +37,6 @@ class OBSController:
         self._connected = False
         if hasattr(self, 'ws'):
             await self.ws.disconnect()
-
-    async def _handle_media_end(self, data):
-        """ Logic to execute whenever some media ends """
-        input_name = data.get('inputName')
-        # ignore if in ignore list
-        if not input_name or input_name in self.ignore_media:
-            return
-        logger.info(f"Media ended -> {input_name}")
-        # find and hide the source
-        for scene in self.media_scenes:
-            if input_name in self.media_scenes[scene]:
-                await self.hide_source(input_name, scene)
-                return
 
     async def _get_scene_item_list(self, scene_name):
         """ Get list of items in a scene """
@@ -126,29 +114,48 @@ class OBSController:
         if not response.ok():
             logger.error(f"Failed to hide source {source_name} in scene {scene_name}")
 
-    async def show_and_wait(self, source_name, scene_name, wait_for=None):
-        """ Show a source, then hold and wait for 'wait_for' media to end """
-        wait_for = wait_for or source_name
-        self.wait_for_event = asyncio.Event()
-        async def temp_callback(data):
-            if data.get('inputName') == wait_for:
-                await asyncio.sleep(0.5)
-                self.wait_for_event.set()
-        self.ws.register_event_callback(temp_callback, 'MediaInputPlaybackEnded')
-        await self.show_source(source_name, scene_name)
-        logger.warning(f"Waiting on: {wait_for}")
-        await self.wait_for_event.wait()
-        self.ws.deregister_event_callback(temp_callback, 'MediaInputPlaybackEnded')
-
     async def set_source_text(self, source_name, text_content):
         """ Edit the text content of a text source """
         logger.info(f"Setting text content for source {source_name}")
         request = simpleobsws.Request('SetInputSettings', {
             'inputName': source_name,
-            'inputSettings': {
-                'text': text_content
-            }
+            'inputSettings': {'text': text_content}
         })
         response = await self.ws.call(request)
         if not response.ok():
             logger.error(f"Failed to set text content for source {source_name}")
+
+    async def _handle_media_end(self, data):
+        """ Logic to execute whenever some media ends """
+        input_name = data.get('inputName')
+        # ignore if in ignore list
+        if not input_name or input_name in self.ignore_media:
+            return
+        logger.info(f"Media ended -> {input_name}")
+        # find and hide the source
+        for scene in self.media_scenes:
+            if input_name in self.media_scenes[scene]:
+                await self.hide_source(input_name, scene)
+                break
+        if self.wait_for and self.wait_for == input_name:
+            self.wait_for_event.set()
+
+    async def show_and_wait(self, source_name, scene_name, wait_for=None):
+        """ Show a source, then hold and wait for 'wait_for' media to end """
+        self.wait_for = wait_for or source_name
+        self.wait_for_event = asyncio.Event()
+        await self.show_source(source_name, scene_name)
+        logger.warning(f"Waiting on: {self.wait_for}")
+        await self.wait_for_event.wait()
+        self.wait_for = None
+        await asyncio.sleep(0.5)
+    
+    async def clear_wait(self):
+        self.wait_for_event.set()
+        if self.wait_for:
+            for scene in self.media_scenes:
+                if self.wait_for in self.media_scenes[scene]:
+                    await self.hide_source(self.wait_for, scene)
+                    break
+            self.wait_for = None
+        self.wait_for_event = asyncio.Event()

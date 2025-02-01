@@ -74,6 +74,10 @@ class ChannelChannelPointsCustomRewardRedemptionAddAlert(Alert):
             logger.error(f"ChannelPointRedeem: {rewardId} \n{json.dumps(self.data, indent=2)}")
             return
         rewardConf = cfg[rewardId]
+        old_volume = None
+        if "lower_volume" in rewardConf:
+            old_volume = await self.bot.spotify.get_current_volume()
+            await self.bot.spotify.set_volume(volume=rewardConf['lower_volume'])
         if "source" in rewardConf: # Source to hide?
             if "delay" in rewardConf:
                 await self.bot.obsws.show_source(rewardConf['source'], rewardConf['scene'])
@@ -117,4 +121,5 @@ class ChannelChannelPointsCustomRewardRedemptionAddAlert(Alert):
                     await self.bot.obsws.show_and_wait(f'TWSS{random.randint(1, 21)}', '[S] TWSS')
                 case _:
                     pass
-        
+        if old_volume:
+            await self.bot.spotify.set_volume(volume=old_volume)
