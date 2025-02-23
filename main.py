@@ -1,25 +1,25 @@
-from poolguy.utils import asyncio, os, json, webbrowser, time
-from poolguy.utils import ColorLogger, loadJSON, MaxSizeDict, cmd_rate_limit, randString, ctxt
-from poolguy.twitch import CommandBot
+from poolguy.utils import asyncio, os, json, webbrowser, time, aiofiles
+from poolguy.utils import ColorLogger, loadJSON, MaxSizeDict, randString, ctxt, web, aioLoadJSON
+from poolguy.twitch import CommandBot, command, rate_limit
 from poolguy.tester import Tester
 from poolguy.twitchws import Alert
-from customalerts.plugins.obsapi import OBSController
-from customalerts.plugins.skynet import AI
-from customalerts.plugins.spotifyapi import Spotify
-import aiofiles
-from aiohttp import web
+from custom.plugins.obsapi import OBSController
+from custom.plugins.skynet import AI
+from custom.plugins.spotifyapi import Spotify
+from custom.plugins.trends import get_trending_now, to_pascal_case
 
 logger = ColorLogger(__name__)
 
+
 class MyBot(Tester):
-    def __init__(self, goals_cfg, obs_cfg, ai_cfg, spotify_cfg, *args, **kwargs):
+    def __init__(self, goals_cfg, obs_cfg, ai_cfg, spotify_cfg, tags=None, *args, **kwargs):
         # Fetch sensitive data from environment variables
         client_id = os.getenv("SOE_CLIENT_ID")
         client_secret = os.getenv("SOE_CLIENT_SECRET")
         if not client_id or not client_secret:
             raise ValueError("Environment variables SOE_CLIENT_ID and SOE_CLIENT_SECRET are required")
-        kwargs['http_config']['client_id'] = client_id
-        kwargs['http_config']['client_secret'] = client_secret
+        kwargs['twitch_config']['client_id'] = client_id
+        kwargs['twitch_config']['client_secret'] = client_secret
         #===============================================
         super().__init__(*args, **kwargs)
         self.obsws = OBSController(**obs_cfg)
@@ -32,13 +32,33 @@ class MyBot(Tester):
         self.banHTML = ""
         self.channelBadges = {}
         self.alertDone = True
+        self.base_tags = tags or []
 
     async def after_login(self):
         self.channelBadges[str(self.http.user_id)] = await self.getChanBadges(self.http.user_id)
         await self.obsws._setup()
+        self.spotify.token_handler.storage = self.http.storage
         await self.spotify.login()
+        if not self.http.server.is_running() and self.http.server.route_len() > 2:
+            await self.http.server.start()
         await self.ai.wait_for_setup()
-    
+
+    async def shutdown(self, reset=True):
+        """Gracefully shutdown the bot"""
+        logger.warning("Shutting down TwitchBot...")
+        if not reset:
+            self.is_running = False
+        logger.warning("Closing TwitchWS...")
+        await self.ws.close()
+        # Clear all tasks
+        logger.warning("Clearing tasks...")
+        for task in self._tasks:
+            if task and not task.done():
+                task.cancel()
+        self._tasks.clear()
+        await self.spotify.token_handler.stop()
+        logger.warning("TwitchBot shutdown complete")
+
     def _cleanSubs(self, data):
         out = {'t1': [], 't2': [], 't3': []}
         for i in data:
@@ -50,10 +70,23 @@ class MyBot(Tester):
     async def getChanBadges(self, bid=None, size='image_url_4x'):
         r = await self.http.getGlobalChatBadges()
         r += await self.http.getChannelChatBadges(bid)
-        badges = {}
-        for i in r:
-            badges[i['set_id']] = {b['id']: b[size] for b in i['versions']}
-        return badges
+        return {i['set_id']: {b['id']: b[size] for b in i['versions']} for i in r}
+    
+    @command()
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def cheers(self, user, channel, args):
+        """Shows cheer list """
+        cfg = await aioLoadJSON("db/cheers_cfg.json")
+        each = [f"[{key} {cfg[key]['name']}]" for key, value in cfg.items()]
+        out = ""
+        for i in each:
+            if len(out)+len(i) > 400:
+                await self.http.sendChatMessage(out, broadcaster_id=channel["broadcaster_id"])
+                out = f"{i}"
+            else:
+                out += f"{i}"
+        if len(out) > 0:
+            await self.http.sendChatMessage(out, broadcaster_id=channel["broadcaster_id"])  
 
     def register_routes(self):
         @self.app.route("/alertended")
@@ -146,6 +179,7 @@ class MyBot(Tester):
             await send_init_bit_goal(ws)
            
             last_sub_update = time.time()
+            logger.warning(f"Websocket connected: goalsws")
             while not ws.closed:
                 try:
                     update = await asyncio.wait_for(self.goal_queue.get(), timeout=15)
@@ -168,7 +202,10 @@ class MyBot(Tester):
                     break
             # Clean up
             if not ws.closed:
-                await ws.close()
+                try:
+                    await ws.close()
+                except:
+                    pass
             logger.warning("goalsws connection closed")
         #=====================================================================
         #=====================================================================
@@ -184,6 +221,7 @@ class MyBot(Tester):
                 logger.error(f"chatws error: not logged in yet")
                 await asyncio.sleep(10)
             # Keep connection alive and wait for updates
+            logger.warning(f"Websocket connected: chatsws")
             while not ws.closed:
                 try:
                     update = await asyncio.wait_for(self.chat_queue.get(), timeout=15)
@@ -214,6 +252,7 @@ class MyBot(Tester):
                 logger.error(f"alertsws error: not logged in yet")
                 await asyncio.sleep(10)
             # Keep connection alive and wait for updates
+            logger.warning(f"Websocket connected: alertsws")
             while not ws.closed:
                 try:
                     update = await asyncio.wait_for(self.alertws_queue.get(), timeout=15)
@@ -231,20 +270,15 @@ class MyBot(Tester):
                 await ws.close()
             logger.warning("alertsws connection closed")
 
-        @self.app.route('/')
-        async def index():
-            out = await self.http.login()
-            return web.json_response({"login": out})
-        
-        logger.info(f"[register_routes] Done")
-
-
 if __name__ == '__main__':
     import logging
-    from customalerts import alert_objs
+    from custom import alert_objs
     fmat = ctxt('%(asctime)s', 'yellow', style='d') + '-%(levelname)s-' + ctxt('[%(name)s]', 'purple', style='d') + ctxt(' %(message)s', 'green', style='d')
     logging.basicConfig(format=fmat, datefmt="%I:%M:%S%p", level=logging.INFO)
+    logging.getLogger('aiohttp.access').setLevel(logging.INFO)
+    logging.getLogger('simpleobsws').setLevel(logging.INFO)
     cfg = loadJSON("config.json")
     cfg['alert_objs'] = alert_objs
+    cfg['twitch_config']['base_dir'] = os.path.dirname(os.path.abspath(__file__))
     bot = MyBot(**cfg)
     asyncio.run(bot.start())

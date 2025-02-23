@@ -7,5 +7,6 @@ keyboard
 pydub
 edge_tts
 simpleobsws
-spotifio
-poolguy
+trendspy
+git+https://github.com/s4w3d0ff/spotifio.git
+git+https://github.com/s4w3d0ff/pool-guy.git
