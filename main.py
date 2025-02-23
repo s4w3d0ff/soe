@@ -5,13 +5,14 @@ from poolguy.tester import Tester
 from poolguy.twitchws import Alert
 from customalerts.plugins.obsapi import OBSController
 from customalerts.plugins.skynet import AI
+from customalerts.plugins.spotifyapi import Spotify
 import aiofiles
 from aiohttp import web
 
 logger = ColorLogger(__name__)
 
 class MyBot(Tester):
-    def __init__(self, goals_cfg, obs_cfg, ai_cfg, *args, **kwargs):
+    def __init__(self, goals_cfg, obs_cfg, ai_cfg, spotify_cfg, *args, **kwargs):
         # Fetch sensitive data from environment variables
         client_id = os.getenv("SOE_CLIENT_ID")
         client_secret = os.getenv("SOE_CLIENT_SECRET")
@@ -22,6 +23,7 @@ class MyBot(Tester):
         #===============================================
         super().__init__(*args, **kwargs)
         self.obsws = OBSController(**obs_cfg)
+        self.spotify = Spotify(**spotify_cfg)
         self.ai = AI(**ai_cfg)
         self.goals_cfg = goals_cfg
         self.goal_queue = asyncio.Queue()
@@ -34,6 +36,7 @@ class MyBot(Tester):
     async def after_login(self):
         self.channelBadges[str(self.http.user_id)] = await self.getChanBadges(self.http.user_id)
         await self.obsws._setup()
+        await self.spotify.login()
         await self.ai.wait_for_setup()
     
     def _cleanSubs(self, data):
@@ -242,7 +245,6 @@ if __name__ == '__main__':
     fmat = ctxt('%(asctime)s', 'yellow', style='d') + '-%(levelname)s-' + ctxt('[%(name)s]', 'purple', style='d') + ctxt(' %(message)s', 'green', style='d')
     logging.basicConfig(format=fmat, datefmt="%I:%M:%S%p", level=logging.INFO)
     cfg = loadJSON("config.json")
-    cfg['obs_cfg'].update(loadJSON("db/auth.json")['OBS'])
     cfg['alert_objs'] = alert_objs
     bot = MyBot(**cfg)
     asyncio.run(bot.start())
