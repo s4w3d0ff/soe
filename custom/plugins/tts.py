@@ -1,8 +1,8 @@
 import edge_tts
 from pathlib import Path
-from poolguy.utils import ColorLogger, asyncio
+from poolguy.utils import logging, asyncio
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 VOICES = {
     "Jenny": {

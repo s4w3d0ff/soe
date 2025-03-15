@@ -1,7 +1,7 @@
 from spotifio import Client
-from poolguy.utils import ColorLogger, re, wraps
+from poolguy.utils import logging, re, wraps
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def extract_spotify_id(uri_or_url):

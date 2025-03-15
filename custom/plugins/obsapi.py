@@ -1,11 +1,13 @@
 import simpleobsws
-from poolguy.utils import ColorLogger, asyncio
+from poolguy.utils import logging, asyncio
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class OBSController:
     def __init__(self, host, port, password, ignore_media=None, media_scenes=None, status_config=None):
-        self.ws = simpleobsws.WebSocketClient(url=f'ws://{host}:{port}', password=password)
+        self.host = host
+        self.port = port
+        self.password = password
         self.ignore_media = ignore_media or []
         self.media_scenes = media_scenes or []
         self._connected = False
@@ -15,6 +17,7 @@ class OBSController:
         
     async def _setup(self):
         """ Create connection and do setup """
+        self.ws = simpleobsws.WebSocketClient(url=f'ws://{self.host}:{self.port}', password=self.password)
         while not self._connected:
             try:
                 await self.ws.connect()
@@ -59,6 +62,17 @@ class OBSController:
                 'sourceName': source_name
             })
         return response['sceneItemId']
+
+    async def start_recording(self):
+        """ Starts the recorder """
+        logger.warning(f"Starting recording in obs!")
+        return await self.call('StartRecord')
+
+    async def stop_recording(self):
+        """ Stops the recorder """
+        response = await self.call('StopRecord')
+        logger.warning(f"Stopped recording in obs!")
+        return response["outputPath"]
 
     async def hide_all_sources(self, scene_name):
         """ Hide all sources in a scene"""
@@ -160,53 +174,3 @@ class OBSController:
                     break
             self.wait_for = None
         self.wait_for_event = asyncio.Event()
-
-
-"""
-{
-    'outputs': [
-        {
-            'outputActive': True, 
-            'outputFlags': {
-                'OBS_OUTPUT_AUDIO': True, 
-                'OBS_OUTPUT_ENCODED': True, 
-                'OBS_OUTPUT_MULTI_TRACK': True, 
-                'OBS_OUTPUT_SERVICE': True, 
-                'OBS_OUTPUT_VIDEO': True
-            }, 
-            'outputHeight': 1080, 
-            'outputKind': 'rtmp_output', 
-            'outputName': 'adv_stream', 
-            'outputWidth': 1920
-        }, 
-        {
-            'outputActive': False, 
-            'outputFlags': {
-                'OBS_OUTPUT_AUDIO': True, 
-                'OBS_OUTPUT_ENCODED': True, 
-                'OBS_OUTPUT_MULTI_TRACK': True, 
-                'OBS_OUTPUT_SERVICE': False, 
-                'OBS_OUTPUT_VIDEO': True
-            }, 
-            'outputHeight': 1080, 
-            'outputKind': 'ffmpeg_muxer', 
-            'outputName': 'adv_file_output', 
-            'outputWidth': 1920
-        }, 
-        {
-            'outputActive': False, 
-            'outputFlags': {
-                'OBS_OUTPUT_AUDIO': False, 
-                'OBS_OUTPUT_ENCODED': False, 
-                'OBS_OUTPUT_MULTI_TRACK': False, 
-                'OBS_OUTPUT_SERVICE': False, 
-                'OBS_OUTPUT_VIDEO': True
-             }, 
-            'outputHeight': 1080, 
-            'outputKind': 'virtualcam_output', 
-            'outputName': 'virtualcam_output', 
-            'outputWidth': 1920
-        }
-    ]
-}
-"""

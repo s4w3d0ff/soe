@@ -1,6 +1,5 @@
 @echo off
 
-REM Check if CUDA is installed by trying to run nvcc
 nvcc --version > nul 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: CUDA is not installed or nvcc is not in PATH
@@ -9,7 +8,6 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Get CUDA version and check if it's >= 12.4
 for /f "tokens=2 delims=," %%a in ('nvcc --version ^| findstr "release"') do (
     set "version_str=%%a"
 )

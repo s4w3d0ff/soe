@@ -1,40 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="static/css/goals.css">
-	<script src="static/js/websocket-utils.js"></script>
-	<script src="static/js/goals.js"></script>
 </head>
 <body>
-    <div id="mygoal"></div>
-	<script>
-		// Create a map to store goal bars
-		const goalBars = new Map();
-
-		const ws = createWebSocketConnection('/goalsws', (data) => {
-			console.log('Received data:', data); // Debug log
-			
-			// Get or create the goal bar
-			if (!goalBars.has(data.bar)) {
-				const goalBar = new GoalBar(data.bar);
-				if (goalBar.container) {
-					goalBars.set(data.bar, goalBar);
-				}
-			}
-			
-			const goalBar = goalBars.get(data.bar);
-			if (!goalBar) {
-				console.error(`Goal bar "${data.bar}" not found or could not be created`);
-				return;
-			}
-
-			// Handle the message
-			if (data.progress_type === 'total') {
-				goalBar.updateGoalTotal(data.amount);
-			} else {
-				goalBar.updateSegment(data.progress_type, data.amount);
-			}
-		});
-	</script>
+    <div class="goal-container">
+		<div class="contribution-stats">
+			<div class="stat-container goal-total-container">
+				<span class="stat-label goal-total">Monthly Goal</span>
+				<span id="current-amount">0</span>/<span id="goal-total">0</span>
+				<span class="percent-value"><span id="goal-percent">0</span>%</span>
+			</div>
+			<div class="stat-container">
+				<span class="stat-label stat-t1">Tier 1 Subs</span>
+				<span id="t1-current">0</span> / <span id="t1-needed">0</span>
+			</div>
+			<div class="stat-container">
+				<span class="stat-label stat-t2">Tier 2 Subs</span>
+				<span id="t2-current">0</span> / <span id="t2-needed">0</span>
+			</div>
+			<div class="stat-container">
+				<span class="stat-label stat-t3">Tier 3 Subs</span>
+				<span id="t3-current">0</span> / <span id="t3-needed">0</span>
+			</div>
+			<div class="stat-container">
+				<span class="stat-label stat-bits">Bits</span>
+				<span id="bits-current">0</span> / <span id="bits-needed">0</span>
+			</div>
+		</div>
+		<div class="progress-bar">
+			<div class="progress-segment segment-t1" id="segment-t1"></div>
+			<div class="progress-segment segment-t2" id="segment-t2"></div>
+			<div class="progress-segment segment-t3" id="segment-t3"></div>
+			<div class="progress-segment segment-bits" id="segment-bits"></div>
+		</div>
+    </div>
+    <script src="static/js/goals.js"></script>
 </body>
 </html>

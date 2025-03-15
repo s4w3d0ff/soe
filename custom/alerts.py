@@ -1,13 +1,13 @@
 import aiofiles
 import keyboard
 from pydub import AudioSegment, playback
-from poolguy.utils import ColorLogger, loadJSON, aioUpdateFile
-from poolguy.utils import time, threading, json, random, asyncio, re
+from poolguy.utils import loadJSON, aioUpdateFile
+from poolguy.utils import time, threading, json, random, asyncio, re, logging
 from poolguy.twitchws import Alert
 from .plugins.spotifyapi import duck_volume
 from .plugins.tts import generate_speech, VOICES
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 ###################=========---------
@@ -16,7 +16,7 @@ logger = ColorLogger(__name__)
 class ChannelBanAlert(Alert):
     """channel.ban"""
     queue_skip = False
-    priority = 3
+    priority = 4
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -70,7 +70,10 @@ class ChannelBanAlert(Alert):
         name = self.data['user_name']
         logger.debug(f"[Alert] Ban: starting ai thread")
         q = f'Please inform everyone that "{name}" was just {dur} from the chat for the reason: "{reason if reason else "Acting like a bot"}".'
-        self.ai_thread = self.bot.ai.threaded_ask(q)
+        if self.bot.ai:
+            self.ai_thread = self.bot.ai.threaded_ask(q)
+        else:
+            await self.bot.http.sendChatMessage(f'Get rekt {name} Modding')
         picurl = await self.getUserPic(self.data["user_id"])
         banPage = random.choice(self.banPages)
         self.bot.banHTML = await self.render_page(banPage, name, picurl)
@@ -84,13 +87,23 @@ class ChannelBanAlert(Alert):
 ###########################################################=================---------
 points_cfg = loadJSON("db/chan_points_cfg.json")
 
-class ChannelChannelPointsCustomRewardRedemptionAddAlert(Alert):
+class VideoRedeem(Alert):
     queue_skip = False
     priority = 3
+    store = False
 
+    @duck_volume(volume=69)
+    async def process(self):
+        rewardConf = points_cfg[self.data["reward"]["id"]]
+        await self.bot.obsws.show_and_wait(rewardConf['source'], rewardConf['scene'])
+
+class ClownCoreRedeem(Alert):
+    queue_skip = False
+    priority = 3
+    store = False
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.avatar_scene = "[S] Avatar"
         self.vidscene = "[S] Videos"
         self.clown_sources = [
             "clown-foldpizza",
@@ -101,12 +114,70 @@ class ChannelChannelPointsCustomRewardRedemptionAddAlert(Alert):
             "clown-sub",
             "clown-hell"
         ]
-        self.cabbage_emotes = [
-            's4w3d0FfPurp', 
-            's4w3d0FfGoldCabbage', 
-            's4w3d0FfCabbage', 
-            's4w3d0FfCabbageJAM'
-        ]
+    
+    @duck_volume(volume=69)
+    async def process(self):
+        await self.bot.obsws.show_and_wait(random.choice(self.clown_sources), self.vidscene)
+        
+class TWSSRedeem(Alert):
+    queue_skip = False
+    priority = 1
+    store = False
+
+    @duck_volume(volume=69)
+    async def process(self):
+        await self.bot.obsws.show_and_wait(f'TWSS{random.randint(1, 21)}', '[S] TWSS')
+
+class ChannelChannelPointsCustomRewardRedemptionAddAlert(Alert):
+    queue_skip = False
+    priority = 2
+        
+    async def process(self):
+        rewardId = self.data["reward"]["id"]
+        if rewardId not in points_cfg:
+            logger.error(f"ChannelPointRedeem: {rewardId} \n{json.dumps(self.data, indent=2)}")
+            return
+        rewardConf = points_cfg[rewardId]
+        if 'name' not in rewardConf:
+            alert = VideoRedeem(self.bot, self.message_id, self.channel, self.data, self.timestamp)
+            await self.bot.ws.notification_handler._queue.put((alert.priority, alert))
+            return
+        match rewardConf['name']:
+            # Ban_______________
+            case "bansmall":
+                await self.timeout(60)
+            case "banbig":
+                await self.timeout(3600)
+            # Cabbage____________
+            case "cabbage":
+                emotes = rewardConf['emotes']
+                for i in range(3):
+                    await asyncio.sleep(0.3)
+                    await self.bot.http.sendChatMessage(f'{random.choice(emotes)} {random.choice(emotes)} {random.choice(emotes)}')
+            # Sound on Key____________
+            case "mario.mp3":
+                self.addSoundOnKeyTask("db/sounds/mario-jump.mp3", 300, -15)
+            case "ctrl_fart":
+                self.addSoundOnKeyTask("db/sounds/farts/fart1.wav", 300, -15)
+            # Avatars____________
+            case "monke" | "scav" | "kek":
+                await self.bot.obsws.hide_all_sources(rewardConf['scene'])
+                await self.bot.obsws.show_source(rewardConf['source'], rewardConf['scene'])
+             # Clowncore____________
+            case "clowncore":
+                alert = ClownCoreRedeem(self.bot, self.message_id, self.channel, self.data, self.timestamp)
+                await self.bot.ws.notification_handler._queue.put((alert.priority, alert))
+             # TWSS____________
+            case "TWSS":
+                await self.bot.obsws.show_source(f'TWSS{random.randint(1, 21)}', '[S] TWSS')
+                #alert = TWSSRedeem(self.bot, self.message_id, self.channel, self.data, self.timestamp)
+                #await self.bot.ws.notification_handler._queue.put((alert.priority, alert))
+            case "flashbang":
+                await self.bot.obsws.show_source(rewardConf['source'], rewardConf['scene'])
+                await asyncio.sleep(rewardConf['delay'])
+                await self.bot.obsws.hide_source(rewardConf['source'], rewardConf['scene'])
+            case _:
+                pass
 
     async def timeout(self, size=60):
         viewer2ban = self.data["user_input"].replace("@", "").replace(" ", "")
@@ -146,62 +217,6 @@ class ChannelChannelPointsCustomRewardRedemptionAddAlert(Alert):
             await asyncio.sleep(0.05)
         logger.debug(f"[soundOnKey] -> ({key}):{sound} -complete-")
 
-    async def process(self):
-        rewardId = self.data["reward"]["id"]
-        if rewardId not in points_cfg:
-            logger.error(f"ChannelPointRedeem: {rewardId} \n{json.dumps(self.data, indent=2)}")
-            return
-        rewardConf = points_cfg[rewardId]
-        old_volume = None
-        if "lower_volume" in rewardConf:
-            old_volume = await self.bot.spotify.get_current_volume()
-            await self.bot.spotify.set_volume(volume=rewardConf['lower_volume'])
-        if "source" in rewardConf: # Source to hide?
-            if "delay" in rewardConf:
-                await self.bot.obsws.show_source(rewardConf['source'], rewardConf['scene'])
-                await asyncio.sleep(rewardConf['delay'])
-                await self.bot.obsws.hide_source(rewardConf['source'], rewardConf['scene'])
-            else:
-                await self.bot.obsws.show_and_wait(rewardConf['source'], rewardConf['scene'])
-        #===============================================================#
-        if 'name' in rewardConf:
-            match rewardConf['name']:
-                # Ban_______________
-                case "bansmall":
-                    await self.timeout(60)
-                case "banbig":
-                    await self.timeout(3600)
-                # Cabbage____________
-                case "cabbage":
-                    for i in range(3):
-                        await asyncio.sleep(0.3)
-                        await self.bot.http.sendChatMessage(f'{random.choice(self.cabbage_emotes)} {random.choice(self.cabbage_emotes)} {random.choice(self.cabbage_emotes)}')
-                # Sound on Key____________
-                case "mario.mp3":
-                    self.addSoundOnKeyTask("db/sounds/mario-jump.mp3", 300, -15)
-                case "ctrl_fart":
-                    self.addSoundOnKeyTask("db/sounds/farts/fart1.wav", 300, -15)
-                # Avatars____________
-                case "monke":
-                    await self.bot.obsws.hide_all_sources(self.avatar_scene)
-                    await self.bot.obsws.show_source("[Av] Monke", self.avatar_scene)
-                case "scav":
-                    await self.bot.obsws.hide_all_sources(self.avatar_scene)
-                    await self.bot.obsws.show_source("[Av] Scav", self.avatar_scene)
-                case "kek":
-                    await self.bot.obsws.hide_all_sources(self.avatar_scene)
-                    await self.bot.obsws.show_source("[Av] Kek", self.avatar_scene)
-                 # Clowncore____________
-                case "clowncore":
-                    await self.bot.obsws.show_and_wait(random.choice(self.clown_sources), self.vidscene)
-                 # TWSS____________
-                case "TWSS":
-                    await self.bot.obsws.show_and_wait(f'TWSS{random.randint(1, 21)}', '[S] TWSS')
-                case _:
-                    pass
-        if old_volume:
-            await self.bot.spotify.set_volume(volume=old_volume)
-
 
 ############################=========---------
 ### channel.chat.message ###=============---------
@@ -229,7 +244,7 @@ class ChannelChatMessageAlert(Alert):
         return text
 
     async def process(self):
-        logger.info(f'[Chat] {self.data["chatter_user_name"]}: {self.data["message"]["text"]}', 'purple')
+        logger.info(f'[Chat] {self.data["chatter_user_name"]}: {self.data["message"]["text"]}')
         await self.bot.command_check(self.data)
         out = {
             'id': self.data['message_id'], 
@@ -240,7 +255,7 @@ class ChannelChatMessageAlert(Alert):
             'timestamp': self.timestamp
             }
         #await self.bot.chat_queue.put(out)
-        logger.debug(f'[Chat] {json.dumps(out, indent=2)}', 'purple')
+        logger.debug(f'[Chat] {json.dumps(out, indent=2)}')
 
 
 #################################=========---------
@@ -250,7 +265,6 @@ class ChannelChatNotificationAlert(Alert):
     queue_skip = True
 
     async def process(self):
-        logger.debug(f'[ChannelChatNotificationAlert] {json.dumps(self.data, indent=2)}', 'purple')
         notice_type = self.data['notice_type']
         if notice_type.startswith('shared'):
             return
@@ -269,30 +283,14 @@ class ChannelChatNotificationAlert(Alert):
 ### channel.cheer ###=============---------
 #####################=================---------
 cheer_cfg = loadJSON("db/cheers_cfg.json")
-bit_scene = "[S] Bit Alerts"
-bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
-bit_text = "CheerText"
-
 class ChannelCheerAlert(Alert):
     queue_skip = False
     priority = 1
-
-    @duck_volume(volume=50)
-    async def _process(self, amount, alertK):
-        usr = "Anonymous" if self.data['is_anonymous'] else self.data['user_name']
-        if self.data["message"] and amount >= 200:
-            voice = random.choice(list(VOICES.keys()))
-            await generate_speech(self.data['message'], "db/bit_tts.mp3", voice)
-        txt = cheer_cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
-        await self.bot.obsws.set_source_text(bit_text, ' '+txt)
-        for a in bit_altscenes:
-            await self.bot.obsws.show_source(a, bit_scene)
-        await self.bot.obsws.show_and_wait(cheer_cfg[alertK]['source'], bit_scene)
-        await self.bot.obsws.set_source_text(bit_text, "")
-        for a in bit_altscenes:
-            await self.bot.obsws.hide_source(a, bit_scene)
-        if self.data["message"] and amount >= 200:
-            await self.bot.obsws.show_and_wait("bit_tts", bit_scene)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bit_scene = "[S] Bit Alerts"
+        self.bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
+        self.bit_text = "CheerText"
 
     async def process(self):
         logger.debug(f"[Bot] Cheer: \n{json.dumps(self.data, indent=2)}")
@@ -306,27 +304,52 @@ class ChannelCheerAlert(Alert):
         if alertK:
             await self._process(amount, alertK)
 
+    @duck_volume(volume=50)
+    async def _process(self, amount, alertK):
+        usr = "Anonymous" if self.data['is_anonymous'] else self.data['user_name']
+        if self.data["message"] and amount >= 123:
+            voice = random.choice(list(VOICES.keys()))
+            await generate_speech(self.data['message'], "db/bit_tts.mp3", voice)
+        txt = cheer_cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
+        await self.bot.obsws.set_source_text(self.bit_text, ' '+txt)
+        for a in self.bit_altscenes:
+            await self.bot.obsws.show_source(a, self.bit_scene)
+        await self.bot.obsws.show_and_wait(cheer_cfg[alertK]['source'], self.bit_scene)
+        await self.bot.obsws.set_source_text(self.bit_text, "")
+        for a in self.bit_altscenes:
+            await self.bot.obsws.hide_source(a, self.bit_scene)
+        if self.data["message"] and amount >= 200:
+            await self.bot.obsws.show_and_wait("bit_tts", self.bit_scene)
+
 ####################=========---------
 ### channel.raid ###=============---------
 ####################=================---------
 class ChannelRaidAlert(Alert):
     queue_skip = False
     priority = 2
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bit_scene = "[S] Bit Alerts"
+        self.bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
+        self.bit_text = "CheerText"
+        
     @duck_volume(volume=50)
     async def process(self):
         raidFrom = self.data['from_broadcaster_user_name']
         raidTo = self.data['to_broadcaster_user_name']
         views = self.data['viewers']
-        r = self.bot.ai.ask(f'{raidFrom} is raiding {raidTo} with {views} viewers!, please inform chat.')
+        if self.bot.ai:
+            r = self.bot.ai.ask(f'{raidFrom} is raiding {raidTo} with {views} viewers!, please inform chat.')
+        else:
+            r = f"{raidFrom} thank you for the {views} viewer raid!"
         await self.bot.http.sendChatMessage(f'{r}')
-        await self.bot.obsws.set_source_text(bit_text, f" {raidFrom} is raiding with {views} viewers!")
-        for a in bit_altscenes:
-            await self.bot.obsws.show_source(a, bit_scene)
-        await self.bot.obsws.show_and_wait('hotfeet', bit_scene)
-        await self.bot.obsws.set_source_text(bit_text, "")
-        for a in bit_altscenes:
-            await self.bot.obsws.hide_source(a, bit_scene)
+        await self.bot.obsws.set_source_text(self.bit_text, f" {raidFrom} is raiding with {views} viewers!")
+        for a in self.bit_altscenes:
+            await self.bot.obsws.show_source(a, self.bit_scene)
+        await self.bot.obsws.show_and_wait('hotfeet', self.bit_scene)
+        await self.bot.obsws.set_source_text(self.bit_text, "")
+        for a in self.bit_altscenes:
+            await self.bot.obsws.hide_source(a, self.bit_scene)
 
 
 ######################=========---------
@@ -335,19 +358,24 @@ class ChannelRaidAlert(Alert):
 class ChannelFollowAlert(Alert):
     queue_skip = False
     priority = 3
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bit_scene = "[S] Bit Alerts"
+        self.bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
+        self.bit_text = "CheerText"
+        
     @duck_volume(volume=50)
     async def process(self):
         uname = self.data['user_name']
         logger.info(f"[Bot] {uname} followed!")
         await self.bot.http.sendChatMessage(f"Thank you for the follow! @{uname} s4w3d0FfLuv")
-        await self.bot.obsws.set_source_text(bit_text, f" {uname} joined the cabbage patch!")
-        for a in bit_altscenes:
-            await self.bot.obsws.show_source(a, bit_scene)
-        await self.bot.obsws.show_and_wait('greasy', bit_scene)
-        await self.bot.obsws.set_source_text(bit_text, "")
-        for a in bit_altscenes:
-            await self.bot.obsws.hide_source(a, bit_scene)
+        await self.bot.obsws.set_source_text(self.bit_text, f" {uname} joined the cabbage patch!")
+        for a in self.bit_altscenes:
+            await self.bot.obsws.show_source(a, self.bit_scene)
+        await self.bot.obsws.show_and_wait('greasy', self.bit_scene)
+        await self.bot.obsws.set_source_text(self.bit_text, "")
+        for a in self.bit_altscenes:
+            await self.bot.obsws.hide_source(a, self.bit_scene)
 
 
 #############################=========---------
