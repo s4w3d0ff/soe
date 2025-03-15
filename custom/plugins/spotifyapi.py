@@ -1,7 +1,7 @@
 from spotifio import Client
-from poolguy.utils import ColorLogger, re, wraps
+from poolguy.utils import logging, re, wraps
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def extract_spotify_id(uri_or_url):
@@ -33,18 +33,21 @@ def duck_volume(volume=20):
         async def wrapper(self, *args, **kwargs):
             # Get spotify instance from the Alert's bot
             spotify = self.bot.spotify
-            # Store original volume
-            old_vol = await spotify.get_current_volume()
-            # Set temporary volume
-            await spotify.set_volume(volume)
+            old_vol = None
             try:
+                # Store original volume
+                old_vol = await spotify.get_current_volume()
+                # Set temporary volume
+                await spotify.set_volume(volume)
+            finally:
                 # Execute the wrapped function
                 result = await func(self, *args, **kwargs)
-                return result
-            finally:
+            try:
                 # Restore original volume, even if an error occurs
                 if old_vol is not None:
                     await spotify.set_volume(old_vol)
+            finally:
+                return result
         return wrapper
     return decorator
 

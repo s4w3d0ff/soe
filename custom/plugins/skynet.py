@@ -1,7 +1,7 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from poolguy.utils import logging, os, ColorLogger, asyncio, ThreadWithReturn, ctxt
+from poolguy.utils import logging, os, asyncio, ThreadWithReturn
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
@@ -183,9 +183,13 @@ class AI():
 
 
 if __name__ == '__main__':
-    import logging
-    fmat = ctxt('%(asctime)s', 'yellow', style='d') + '-%(levelname)s-' + ctxt('[%(name)s]', 'purple', style='d') + ctxt(' %(message)s', 'green', style='d')
-    logging.basicConfig(format=fmat, datefmt="%I:%M:%S%p", level=logging.INFO)
+    from rich.logging import RichHandler
+    logging.basicConfig(
+        format='%(message)s',
+        datefmt="%X",#"%I:%M:%S%p",
+        level=logging.INFO,
+        handlers=[RichHandler(rich_tracebacks=True)]
+    )
     cfg = {
 		"persona": "GenZbot",
 		"model": "DeepSeekLlama8BF16", 

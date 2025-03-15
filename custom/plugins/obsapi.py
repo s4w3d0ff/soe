@@ -1,63 +1,78 @@
 import simpleobsws
-from poolguy.utils import ColorLogger, asyncio
+from poolguy.utils import logging, asyncio
 
-logger = ColorLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class OBSController:
-    def __init__(self, host, port, password, ignore_media=[], media_scenes=[]):
-        self.ws = simpleobsws.WebSocketClient(url=f'ws://{host}:{port}', password=password)
-        self.ignore_media = ignore_media
-        self.media_scenes = media_scenes
+    def __init__(self, host, port, password, ignore_media=None, media_scenes=None, status_config=None):
+        self.host = host
+        self.port = port
+        self.password = password
+        self.ignore_media = ignore_media or []
+        self.media_scenes = media_scenes or []
         self._connected = False
         self.wait_for_event = None
         self.wait_for = None
+        self.status_config = status_config
         
     async def _setup(self):
         """ Create connection and do setup """
+        self.ws = simpleobsws.WebSocketClient(url=f'ws://{self.host}:{self.port}', password=self.password)
         while not self._connected:
             try:
                 await self.ws.connect()
                 await self.ws.wait_until_identified()
                 self._connected = True
-                break
             except Exception as e:
                 logger.error(f"Failed to connect to OBS: {e}")
                 await asyncio.sleep(15)
         out = {}
         for scene in self.media_scenes:
-            # Get list of items in scene using GetSceneItemList
             items = await self._get_scene_item_list(scene)
             out[scene] = [item['sourceName'] for item in items]
         self.media_scenes = out
-        # Register callback for media end events
+        # Register callbacks
         self.ws.register_event_callback(self._handle_media_end, 'MediaInputPlaybackEnded')
 
+    async def call(self, req, **kwargs):
+        response = await self.ws.call(simpleobsws.Request(req, kwargs))
+        if response.ok():
+            return response.responseData
+        logger.error(f"{response.requestStatus.comment}")
+        return None
+
     async def cleanup(self):
-        """ Clean up resources and close connection """
         self._connected = False
-        if hasattr(self, 'ws'):
-            await self.ws.disconnect()
+        await self.ws.disconnect()
 
     async def _get_scene_item_list(self, scene_name):
         """ Get list of items in a scene """
-        request = simpleobsws.Request('GetSceneItemList', {'sceneName': scene_name})
-        response = await self.ws.call(request)
-        if response.ok():
-            return response.responseData.get('sceneItems', [])
-        logger.error(f"Failed to get scene item list for scene {scene_name}")
-        return []
+        response = await self.call('GetSceneItemList', **{'sceneName': scene_name})
+        return response.get('sceneItems', [])
+
+    async def _get_stream_status(self):
+        """ Get list of items in a scene """
+        return await self.call('GetStreamStatus')
 
     async def _get_scene_item_id(self, scene_name, source_name):
         """ Get the id of a source in a scene """
-        request = simpleobsws.Request('GetSceneItemId', {
-            'sceneName': scene_name,
-            'sourceName': source_name
-        })
-        response = await self.ws.call(request)
-        if response.ok():
-            return response.responseData['sceneItemId']
-        logger.error(f"Failed to get scene item ID for source {source_name} in scene {scene_name}")
-        return None
+        response = await self.call(
+            'GetSceneItemId', **{
+                'sceneName': scene_name,
+                'sourceName': source_name
+            })
+        return response['sceneItemId']
+
+    async def start_recording(self):
+        """ Starts the recorder """
+        logger.warning(f"Starting recording in obs!")
+        return await self.call('StartRecord')
+
+    async def stop_recording(self):
+        """ Stops the recorder """
+        response = await self.call('StopRecord')
+        logger.warning(f"Stopped recording in obs!")
+        return response["outputPath"]
 
     async def hide_all_sources(self, scene_name):
         """ Hide all sources in a scene"""

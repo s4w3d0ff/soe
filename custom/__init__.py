@@ -1,10 +1,18 @@
-from .bans import ChannelBanAlert
-from .goals import ChannelGoalProgressAlert
-from .cheerfollowraid import ChannelCheerAlert, ChannelRaidAlert, ChannelFollowAlert
-from .chat import ChannelChatMessageAlert, ChannelChatNotificationAlert
-from .channelpoints import ChannelChannelPointsCustomRewardRedemptionAddAlert
-from .hypetrain import ChannelHypeTrainProgressAlert, ChannelHypeTrainEndAlert
-from .subscriptions import ChannelSubscribeAlert, ChannelSubscriptionGiftAlert, ChannelSubscriptionMessageAlert
+from .alerts import (
+    ChannelBanAlert, 
+    ChannelGoalProgressAlert, 
+    ChannelCheerAlert, 
+    ChannelRaidAlert, 
+    ChannelFollowAlert,
+    ChannelChatMessageAlert, 
+    ChannelChatNotificationAlert,
+    ChannelChannelPointsCustomRewardRedemptionAddAlert,
+    ChannelHypeTrainProgressAlert, 
+    ChannelHypeTrainEndAlert,
+    ChannelSubscribeAlert, 
+    ChannelSubscriptionGiftAlert, 
+    ChannelSubscriptionMessageAlert
+    )
 
 alert_objs = {
     'channel.chat.notification': ChannelChatNotificationAlert,
