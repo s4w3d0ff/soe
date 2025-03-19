@@ -1,7 +1,7 @@
 from .alerts import (
     ChannelBanAlert, 
     ChannelGoalProgressAlert, 
-    ChannelCheerAlert, 
+    ChannelBitsUseAlert, 
     ChannelRaidAlert, 
     ChannelFollowAlert,
     ChannelChatMessageAlert, 
@@ -25,7 +25,7 @@ alert_objs = {
     'channel.subscription.message': ChannelSubscriptionMessageAlert,
     'channel.subscription.gift': ChannelSubscriptionGiftAlert,
     'channel.goal.progress': ChannelGoalProgressAlert,
-    'channel.cheer': ChannelCheerAlert,
+    'channel.bits.use': ChannelBitsUseAlert,
     'channel.follow': ChannelFollowAlert,
     'channel.raid': ChannelRaidAlert
 }

@@ -38,6 +38,7 @@ class MyBot(Tester):
         self.alertws_queue = asyncio.Queue()
         self.banHTML = ""
         self.channelBadges = {}
+        self.cheermotes = {}
         self.alertDone = True
         self.base_tags = tags or []
 
@@ -122,16 +123,18 @@ class MyBot(Tester):
 
     @route('/endcredits')
     async def endcredits(self, request):
-        credits = "<br>"
+        credits = "<br><h2>Director</h2>s4w3d0ff"
         subs = self._cleanSubs(await self.http.getBroadcasterSubscriptions())
         if len(subs['t3']) > 0:
-            credits += "<br><h2>Tier 3 Subs</h2>" + '<br> '.join(subs['t3'])
+            credits += "<br><h2>Producers</h2>" + '<br> '.join(subs['t3'])
         if len(subs['t2']) > 0:
-            credits += "<br><h2>Tier 2 Subs</h2>" + '<br> '.join(subs['t2'])
+            credits += "<br><h2>Executive Producers</h2>" + '<br> '.join(subs['t2'])
+        credits += "<br><h2>Writers</h2>" + "<br> ".join([i["user_name"] for i in await self.http.getModerators()])
+        credits += "<br><h2>Editors</h2>" + "<br> ".join([i["user_name"] for i in await self.http.getVIPs()])
         if len(subs['t1']) > 0:
-            credits += "<br><h2>Tier 1 Subs</h2>" + '<br> '.join(subs['t1'])
+            credits += "<br><h2>Lead Cast</h2>" + '<br> '.join(subs['t1'])
         # add followers
-        credits += "<br><h2>Followers</h2>"
+        credits += "<br><h2>Supporting Cast</h2>"
         followers = await self.http.getChannelFollowers()
         credits += '<br> '.join([f["user_name"] for f in followers])
         async with aiofiles.open("templates/credits.html", 'r', encoding='utf-8') as f:
