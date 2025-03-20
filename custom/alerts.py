@@ -278,12 +278,12 @@ class ChannelChatNotificationAlert(Alert):
         await self.bot.alertws_queue.put(out)
         logger.error(f'[ChannelChatNotificationAlert] \n{json.dumps(out, indent=2)}')
 
-
-#####################=========---------
-### channel.cheer ###=============---------
-#####################=================---------
+########################=========---------
+### channel.bits.use ###=============---------
+########################=================---------
 cheer_cfg = loadJSON("db/cheers_cfg.json")
-class ChannelCheerAlert(Alert):
+
+class ChannelBitsUseAlert(Alert):
     queue_skip = False
     priority = 1
     def __init__(self, *args, **kwargs):
@@ -292,24 +292,35 @@ class ChannelCheerAlert(Alert):
         self.bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
         self.bit_text = "CheerText"
 
+    def remove_cheermotes(self, message):
+        result = ""
+        for fragment in message.get('fragments', []):
+            # Only add fragments of type 'text'
+            if fragment.get('type') == 'text':
+                result += fragment.get('text', '')
+        return result.strip()
+
     async def process(self):
-        logger.debug(f"[Bot] Cheer: \n{json.dumps(self.data, indent=2)}")
-        amount = int(self.data['bits'])
-        alertK = None
-        for k in [*cheer_cfg]:
-            if amount < int(k):
-                break
-            else:
-                alertK = k
-        if alertK:
-            await self._process(amount, alertK)
+        logger.debug(f"[Bot] Bits: \n{json.dumps(self.data, indent=2)}")
+        if self.data["type"] == "cheer":
+            amount = int(self.data['bits'])
+            alertK = None
+            for k in [*cheer_cfg]:
+                if amount < int(k):
+                    break
+                else:
+                    alertK = k
+            if alertK:
+                await self._process(amount, alertK)
 
     @duck_volume(volume=50)
     async def _process(self, amount, alertK):
         usr = "Anonymous" if self.data['is_anonymous'] else self.data['user_name']
         if self.data["message"] and amount >= 123:
-            voice = random.choice(list(VOICES.keys()))
-            await generate_speech(self.data['message'], "db/bit_tts.mp3", voice)
+            text = self.remove_cheermotes(self.data["message"])
+            if text:
+                voice = random.choice(list(VOICES.keys()))
+                await generate_speech(text, "db/bit_tts.mp3", voice)
         txt = cheer_cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
         await self.bot.obsws.set_source_text(self.bit_text, ' '+txt)
         for a in self.bit_altscenes:
@@ -320,6 +331,7 @@ class ChannelCheerAlert(Alert):
             await self.bot.obsws.hide_source(a, self.bit_scene)
         if self.data["message"] and amount >= 200:
             await self.bot.obsws.show_and_wait("bit_tts", self.bit_scene)
+
 
 ####################=========---------
 ### channel.raid ###=============---------

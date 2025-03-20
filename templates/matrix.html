@@ -27,10 +27,10 @@
 
 		// Parameters object to store adjustable values
 		const params = {
-			baseSpeed: 0.08,
-			tailLength: 420,
-			fontSize: 42,
-			glowIntensity: 5,
+			baseSpeed: 0.1,
+			tailLength: 120,
+			fontSize: 28,
+			glowIntensity: 3,
 			color: '#00241b'
 		};
 
@@ -50,7 +50,7 @@
 			constructor(x) {
 				this.x = x;
 				this.y = 0;
-				this.speed = params.baseSpeed * (0.25 + Math.random() * 1.5);
+				this.speed = params.baseSpeed + (Math.random() * 0.3);
 				this.active = true;
 				this.charChangeCounter = 0;
 				this.charChangeDelay = 10;
@@ -70,7 +70,7 @@
 				}
 				if (cellY >= rows) {
 					this.y = 0;
-					this.speed = params.baseSpeed * (0.25 + Math.random() * 1.5);
+					this.speed = params.baseSpeed + (Math.random() * 0.3);
 				}
 			}
 		}

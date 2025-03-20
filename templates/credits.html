@@ -25,6 +25,7 @@
   }
   h2 {
     text-shadow: 3px 3px 3px #ababab;
+	margin-bottom: -5px;
   }
   .credits {
 	position: absolute;
@@ -49,7 +50,7 @@
         function scrollOnce() {
             var currentTop = parseInt(creditsDiv.style.top);
             if (!scrolled && currentTop > -divHeight) {
-                creditsDiv.style.top = (currentTop - 2) + 'px';
+                creditsDiv.style.top = (currentTop - 3) + 'px';
                 requestAnimationFrame(scrollOnce);
             } else {
 				creditsDiv.style.top = windowHeight + 'px';
