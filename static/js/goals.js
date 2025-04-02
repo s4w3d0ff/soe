@@ -10,7 +10,7 @@ class GoalProgressBar {
         this.currentValues = {
             t1: 0,
             t2: 0,
-            t3: 1,
+            t3: 0,
             bits: 0
         };
         
@@ -47,6 +47,7 @@ class GoalProgressBar {
         
         this.updateDisplay();
     }
+    
     calculateCurrentTotal() {
         return Object.entries(this.currentValues).reduce((total, [type, amount]) => {
             return total + (amount * this.multipliers[type]);
@@ -72,16 +73,12 @@ class GoalProgressBar {
         return Math.ceil(remaining / this.multipliers[type]);
     }
 
-    handleUpdate(data) {
-        const { progress_type, amount } = data;
-        
-        if (progress_type === 'total') {
-            this.goalTotal = amount;
-        } else if (this.currentValues.hasOwnProperty(progress_type)) {
-            this.currentValues[progress_type] = amount;
-        }
-        
-        this.updateDisplay();
+    formatAsDollars(cents) {
+        // Convert cents to dollars and format with 2 decimal places
+        return (cents / 100).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     updateDisplay() {
@@ -112,8 +109,9 @@ class GoalProgressBar {
             : 0;
 
         document.getElementById('goal-percent').textContent = percentComplete.toFixed(1);
-        document.getElementById('current-amount').textContent = currentTotal.toLocaleString();
-        document.getElementById('goal-total').textContent = this.goalTotal.toLocaleString();
+        // Format the current amount and goal total as dollars with cents
+        document.getElementById('current-amount').textContent = this.formatAsDollars(currentTotal);
+        document.getElementById('goal-total').textContent = this.formatAsDollars(this.goalTotal);
     }
 }
 

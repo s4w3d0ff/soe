@@ -1,11 +1,17 @@
 import aiofiles
 import keyboard
+import time
+import threading
+import json
+import random
+import asyncio
+import re
+import logging
 from pydub import AudioSegment, playback
-from poolguy.utils import loadJSON, aioUpdateFile
-from poolguy.utils import time, threading, json, random, asyncio, re, logging
-from poolguy.twitchws import Alert
-from .plugins.spotifyapi import duck_volume
-from .plugins.tts import generate_speech, VOICES
+from poolguy.storage import loadJSON
+from poolguy import Alert
+from plugins.spotifyapi import duck_volume
+from plugins.tts import generate_speech, VOICES
 
 logger = logging.getLogger(__name__)
 
@@ -250,8 +256,8 @@ class ChannelChatMessageAlert(Alert):
             'id': self.data['message_id'], 
             'user': self.data['chatter_user_name'], 
             'color': self.data['color'], 
-            'badges': await self.parseBadges(), 
-            'text': await self.parseEmotesText(),
+            #'badges': await self.parseBadges(), 
+            'text': self.data['message']['text'], #await self.parseEmotesText(),
             'timestamp': self.timestamp
             }
         #await self.bot.chat_queue.put(out)
@@ -291,6 +297,8 @@ class ChannelBitsUseAlert(Alert):
         self.bit_scene = "[S] Bit Alerts"
         self.bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
         self.bit_text = "CheerText"
+        self.tts_limit = 123
+        self.tts_source = "bit_tts"
 
     def remove_cheermotes(self, message):
         result = ""
@@ -300,8 +308,9 @@ class ChannelBitsUseAlert(Alert):
                 result += fragment.get('text', '')
         return result.strip()
 
+
     async def process(self):
-        logger.debug(f"[Bot] Bits: \n{json.dumps(self.data, indent=2)}")
+        logger.info(f"[Bot] Bits: \n{json.dumps(self.data, indent=2)}")
         if self.data["type"] == "cheer":
             amount = int(self.data['bits'])
             alertK = None
@@ -315,12 +324,13 @@ class ChannelBitsUseAlert(Alert):
 
     @duck_volume(volume=50)
     async def _process(self, amount, alertK):
-        usr = "Anonymous" if self.data['is_anonymous'] else self.data['user_name']
-        if self.data["message"] and amount >= 123:
+        usr = str(self.data['user_name'])
+        text = None
+        if self.data["message"] and amount >= self.tts_limit:
             text = self.remove_cheermotes(self.data["message"])
-            if text:
-                voice = random.choice(list(VOICES.keys()))
-                await generate_speech(text, "db/bit_tts.mp3", voice)
+        if text:
+            voice = random.choice(list(VOICES.keys()))
+            await generate_speech(text, "db/bit_tts.mp3", voice)
         txt = cheer_cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
         await self.bot.obsws.set_source_text(self.bit_text, ' '+txt)
         for a in self.bit_altscenes:
@@ -329,8 +339,8 @@ class ChannelBitsUseAlert(Alert):
         await self.bot.obsws.set_source_text(self.bit_text, "")
         for a in self.bit_altscenes:
             await self.bot.obsws.hide_source(a, self.bit_scene)
-        if self.data["message"] and amount >= 200:
-            await self.bot.obsws.show_and_wait("bit_tts", self.bit_scene)
+        if text:
+            await self.bot.obsws.show_and_wait(self.tts_source, self.bit_scene)
 
 
 ####################=========---------
@@ -399,8 +409,7 @@ class ChannelGoalProgressAlert(Alert):
     async def process(self):
         logger.debug(f"{json.dumps(self.data, indent=2)}")
         g_type = self.data['type']
-        if g_type in ["", "new_bits", "subscription_count"]:
-            await self.bot.goal_queue.put({
+        await self.bot.goal_queue.put({
                 "gtype": g_type,
                 "amount": int(self.data['current_amount'])
             })
@@ -517,3 +526,21 @@ class ChannelSubscriptionMessageAlert(Alert):
             await self.bot.obsws.hide_source(a, sub_scene)
         if tts_fp:
             await self.bot.obsws.show_and_wait('sub_tts', sub_scene)
+
+
+
+alert_objs = {
+    'channel.chat.notification': ChannelChatNotificationAlert,
+    'channel.chat.message': ChannelChatMessageAlert,
+    'channel.ban': ChannelBanAlert,
+    'channel.channel_points_custom_reward_redemption.add': ChannelChannelPointsCustomRewardRedemptionAddAlert,
+    'channel.hype_train.progress': ChannelHypeTrainProgressAlert,
+    'channel.hype_train.end': ChannelHypeTrainEndAlert,
+    'channel.subscribe': ChannelSubscribeAlert,
+    'channel.subscription.message': ChannelSubscriptionMessageAlert,
+    'channel.subscription.gift': ChannelSubscriptionGiftAlert,
+    'channel.goal.progress': ChannelGoalProgressAlert,
+    'channel.bits.use': ChannelBitsUseAlert,
+    'channel.follow': ChannelFollowAlert,
+    'channel.raid': ChannelRaidAlert
+}

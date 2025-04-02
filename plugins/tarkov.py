@@ -1,12 +1,9 @@
-import os
 import re
-import time
-import asyncio
 import logging
-from datetime import datetime
+import asyncio
 from pathlib import Path
 from collections import defaultdict
-
+from poolguy import TwitchBot
 
 logger = logging.getLogger(__name__)
 
@@ -213,8 +210,30 @@ class TarkovLogMonitor:
         self.running = False
         await asyncio.sleep(3)
 
+#==========================================================================================
+# TarkovBot ===============================================================================
+#==========================================================================================
+class TarkovBot(TwitchBot):
+    def __init__(self, eft_config, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.eft = TarkovLogMonitor(**eft_config)
+        self.eft.register_callback('game_prepared', self._eft_game_prepared)
+        self.eft.register_callback('initialized', self._eft_initialized)
 
+    async def _eft_initialized(self, data):
+        logger.warning(f"[Tarkov] Game initialized with version {data['version']}")
+        try:
+            r = await self.obsws.stop_recording()
+            logger.warning(f"[Tarkov] Recording saved: {r}")
+        except:
+            pass
+            
+    async def _eft_game_prepared(self, data):
+        logger.warning(f"[Tarkov] Game prepared: time={data['time_value']}, real={data['real_value']}, diff={data['diff_value']}")
+        await self.obsws.start_recording()
 
+    async def after_login(self):
+        await self.eft.start()
 
 #====================================================================================
 #====================================================================================

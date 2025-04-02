@@ -1,5 +1,8 @@
+import logging
+import asyncio
 import simpleobsws
-from poolguy.utils import logging, asyncio
+from aiohttp import web
+from poolguy import TwitchBot, route
 
 logger = logging.getLogger(__name__)
 
@@ -166,11 +169,28 @@ class OBSController:
         await asyncio.sleep(0.5)
     
     async def clear_wait(self):
-        self.wait_for_event.set()
         if self.wait_for:
             for scene in self.media_scenes:
                 if self.wait_for in self.media_scenes[scene]:
                     await self.hide_source(self.wait_for, scene)
                     break
             self.wait_for = None
-        self.wait_for_event = asyncio.Event()
+        if self.wait_for_event:
+            self.wait_for_event.set()
+        await asyncio.sleep(1)
+
+#==========================================================================================
+# OBSBot =================================================================================
+#==========================================================================================
+class OBSBot(TwitchBot):
+    def __init__(self, obs_cfg, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.obsws = OBSController(**obs_cfg)
+
+    async def after_login(self):
+        await self.obsws._setup()
+
+    @route("/obs/clearwait", method="GET")
+    async def obs_clear_wait(self, request):
+        await self.obsws.clear_wait()
+        return web.Response(text="Wait cleared.")

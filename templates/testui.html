@@ -2,239 +2,616 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Twitch Test Controls</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOE UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <style>
-		html {
-			scrollbar-color: #d7d7d7 #202324;
-		}
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #252525;
+            --text-color: #e0e0e0;
+            --accent-color: #209d9d;
+            --input-border-color: #2f7ef655;
+            --h2-bg-color: #03334a1f;
+            --h2-color: #cbd9d6;
+            --h2-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
+            --card-box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-			font-size: small;
-			color: #d7d7d7;
-            max-width: 800px;
-            margin: 0px auto;
-            padding: 6px;
-			background-color: #181a1b;
+            font-family: 'Silkscreen', cursive;
+            font-size: 0.75em;
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 7px;
+            line-height: 1.2;
         }
-        .form-section {
-            border: 1px solid #aa53ca;
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 9px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
             padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            box-shadow: var(--card-box-shadow);
+            display: flex;
+            flex-direction: column;
+            align-content: revert-layer;
+            justify-content: space-between;
         }
-        .radio-group {
-            margin: 10px 0;
+
+        h1 {
+            text-align: center;
+            color: var(--accent-color);
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        .number-input {
-            margin: 10px 0;
+
+        h2 {
+            text-align: center;
+            margin: -8px -8px 3px -8px;
+            color: var(--h2-color);
+            font-size: 1.2em;
+            background: var(--h2-bg-color);
+            padding: 10px 8px;
+            border-radius: 8px 8px 0 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: var(--h2-box-shadow);
+            word-break: break-word;
         }
-		label {
-			font-weight: bold;
-		}
-		h2 {
-			margin: 0;
-			color: #aa53ca;
-		}
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            margin: 5px 0;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            gap: 1px;
+            margin: 2px 0;
+        }
+
+        label {
+            min-width: 69px;
+        }
+
+        input {
+            padding: 5px;
+            margin: 2px 0;
+            border: 1px solid var(--input-border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            width: 60px;
+            font-family: 'Silkscreen', cursive;
+        }
+
         button {
-            background-color: #9147ff;
-            color: white;
+            padding: 8px 12px;
+            font-family: 'Silkscreen', cursive;
+            background: #4881975c;
+            color: var(--text-color);
             border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 0.9em;
+            box-shadow: var(--h2-box-shadow);
+            min-width: 100px;
         }
+
         button:hover {
-            background-color: #7527fd;
+            opacity: 0.8;
+            background: var(--accent-color);
+        }
+
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .success {
+            background: #2ecc71;
+            color: var(--text-color);
+        }
+
+        .error {
+            background: #e74c3c;
+            color: var(--text-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .section-divider {
+            border-top: 1px solid var(--input-border-color);
+            margin: 20px 0;
+            padding-top: 20px;
+        }
+        .time-display {
+            font-size: 2.5em;
+            text-align: center;
+            color: var(--accent-color);
+            margin: 3px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+        }
+        #statsDisplay {
+            background: var(--bg-color);
+            padding: 5px;
+            border-radius: 0px 0px 10px 10px;
+            font-family: 'Silkscreen', cursive;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            background: var(--card-bg);
+            border-radius: 4px;
+            box-shadow: var(--card-box-shadow);
+            border: 1px solid var(--input-border-color);
+        }
+        .section-title{
+            background: var(--bg-color);
+            font-size: 1.1em;
+            font-weight: bold;
+            justify-content: center;
+            display: flex;
+            border-radius: 10px 10px 0px 0px;
+        }
+        .section-line{
+            border: none;
+            background-color: var(--bg-color);
+            height: 2px;
+            margin: 2px 0;
         }
     </style>
 </head>
 <body>
-    <div class="form-section">
-        <h2>Test Cheer</h2>
-        <div class="number-input">
-            <label>Amount: </label>
-            <input type="number" id="cheer-amount" value="1" min="1">
+    <div class="container">
+        <!-- OBS Control Card -->
+        <div class="card">
+            <h2>OBS Controls</h2>
+            <div class="control-group">
+                <button onclick="clearWait()">Clear Wait</button>
+            </div>
         </div>
-        <div class="radio-group">
-            <label>Anonymous: </label>
-            <input type="radio" name="cheer-anon" value="True"> Y
-            <input type="radio" name="cheer-anon" value="False" checked> N
+        
+        <!-- Subathon Status Card -->
+        <div class="card">
+            <h2>Subathon</h2>
+            <div class="time-display" id="timeRemaining">Loading...</div>
+            <div class="control-group">
+                <button data-action="pause">Pause</button>
+                <button data-action="resume">Resume</button>
+            </div>
+            <div class="section-line"></div>
+            <div class="input-group">
+                <label for="initialMinutes">Minutes:</label>
+                <input type="number" id="initialMinutes" value="60" min="0">
+                <label for="initialSeconds">Seconds:</label>
+                <input type="number" id="initialSeconds" value="0" min="0">
+            </div>
+            <div class="control-group">
+                <button data-action="startNew">Start New</button>
+            </div>
+            <div class="section-title">Multipliers</div>
+            <div id="statsDisplay"></div>
+            <div class="input-group">
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" value="0" min="0">
+                <label for="multiplier">Multiplier:</label>
+                <input type="text" id="multiplier" value="">
+            </div>
+            <div class="control-group">
+                <button data-action="addTime">Add Time</button>
+                <button data-action="removeTime">Remove Time</button>
+            </div>
         </div>
-        <button onclick="testCheer()">Test</button>
-    </div>
-    <div class="form-section">
-        <h2>Test Sub</h2>
-        <div class="radio-group">
-            <label>Tier: </label>
-            <input type="radio" name="single-tier" value="1000" checked> 1
-            <input type="radio" name="single-tier" value="2000"> 2
-            <input type="radio" name="single-tier" value="3000"> 3
+
+        <!-- Bits Section -->
+        <div class="card">
+            <h2>channel.cheer / channel.bits.use</h2>
+            <div class="input-group">
+                <label>Bits:</label>
+                <input type="number" id="bitsAmount" value="100">
+            </div>
+            <div class="input-group">
+                <label>Anonymous:</label>
+                <input type="checkbox" id="bitsAnon">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.cheer')">Test Cheer</button>
+                <button onclick="testEvent('channel.bits.use')">Test Bits Use</button>
+            </div>
         </div>
-        <div class="radio-group">
-            <label>Gifted: </label>
-            <input type="radio" name="gifted" value="True"> Y
-            <input type="radio" name="gifted" value="False" checked> N
+
+        <!-- Subscribe Section -->
+        <div class="card">
+            <h2>channel.subscribe</h2>
+            <div class="input-group">
+                <label>Tier:</label>
+                <input type="number" id="subTier" value="1" min="1" max="3">
+            </div>
+            <div class="input-group">
+                <label>Gifted:</label>
+                <input type="checkbox" id="subGifted">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.subscribe')">Test Sub</button>
+            </div>
         </div>
-        <button onclick="testSub()">Test</button>
+
+        <!-- Sub Gift Section -->
+        <div class="card">
+            <h2>channel.subscription.gift</h2>
+            <div class="input-group">
+                <label>Total:</label>
+                <input type="number" id="giftTotal" value="1">
+            </div>
+            <div class="input-group">
+                <label>Tier:</label>
+                <input type="number" id="giftTier" value="1" min="1" max="3">
+            </div>
+            <div class="input-group">
+                <label>Anonymous:</label>
+                <input type="checkbox" id="giftAnon">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.subscription.gift')">Test Gift</button>
+            </div>
+        </div>
+
+        <!-- Resub Message Section -->
+        <div class="card">
+            <h2>channel.subscription.message</h2>
+            <div class="input-group">
+                <label>Tier:</label>
+                <input type="number" id="resubTier" value="1" min="1" max="3">
+            </div>
+            <div class="input-group">
+                <label>Months:</label>
+                <input type="number" id="resubMonths" value="3">
+            </div>
+            <div class="input-group">
+                <label>Streak:</label>
+                <input type="number" id="resubStreak" value="3">
+            </div>
+            <div class="input-group">
+                <label>Message:</label>
+                <input type="text" id="resubMsg" value="Thank you!" style="width: 120px;">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.subscription.message')">Test Resub</button>
+            </div>
+        </div>
+
+        <!-- Goal Progress Section -->
+        <div class="card">
+            <h2>channel.goal.progress</h2>
+            <div class="input-group">
+                <label>Type:</label>
+                <input type="text" id="goalType" value="bits">
+            </div>
+            <div class="input-group">
+                <label>Current:</label>
+                <input type="number" id="goalCurrent" value="50">
+            </div>
+            <div class="input-group">
+                <label>Target:</label>
+                <input type="number" id="goalTarget" value="100">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.goal.progress')">Test Goal</button>
+            </div>
+        </div>
+
+        <!-- Hype Train Section -->
+        <div class="card">
+            <h2>channel.hype_train.progress / end</h2>
+            <div class="input-group">
+                <label>Level:</label>
+                <input type="number" id="hypeLevel" value="1">
+            </div>
+            <div class="input-group">
+                <label>Total:</label>
+                <input type="number" id="hypeTotal" value="100">
+            </div>
+            <div class="input-group">
+                <label>Progress:</label>
+                <input type="number" id="hypeProgress" value="50">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.hype_train.progress')">Test Progress</button>
+                <button onclick="testEvent('channel.hype_train.end')">Test End</button>
+            </div>
+        </div>
+
+        <!-- Other Events Section -->
+        <div class="card">
+            <h2>channel.chat.notification / channel.follow</h2>
+            <div class="input-group">
+                <label>Message:</label>
+                <input type="text" id="notificationMsg" value="Test notification" style="width: 120px;">
+            </div>
+            <div class="input-group">
+                <label>Username:</label>
+                <input type="text" id="followUsername" value="cool_user" style="width: 120px;">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.chat.notification')">Test Notification</button>
+                <button onclick="testEvent('channel.follow')">Test Follow</button>
+            </div>
+        </div>
     </div>
 
-    <div class="form-section">
-        <h2>Test Sub Gift</h2>
-        <div class="number-input">
-            <label>Amount: </label>
-            <input type="number" id="gift-amount" value="1" min="1">
-        </div>
-        <div class="radio-group">
-            <label>Tier: </label>
-            <input type="radio" name="gift-tier" value="1000" checked> 1
-            <input type="radio" name="gift-tier" value="2000"> 2
-            <input type="radio" name="gift-tier" value="3000"> 3
-        </div>
-        <div class="radio-group">
-            <label>Anonymous: </label>
-            <input type="radio" name="anon" value="True"> Y
-            <input type="radio" name="anon" value="False" checked> N
-        </div>
-        <button onclick="testSubGift()">Test</button>
-    </div>
+    <div id="statusMessage" class="status-message"></div>
 
-    <div class="form-section">
-        <h2>Test ReSub Message</h2>
-        <div class="number-input">
-            <label>Cumulative Months:</label>
-            <input type="number" id="months" value="1" min="1">
-        </div>
-        <div class="number-input">
-            <label>Streak Months:</label>
-            <input type="number" id="streak" value="1" min="1">
-        </div>
-        <div class="number-input">
-            <label>Duration Months:</label>
-            <input type="number" id="duration" value="1" min="1">
-        </div>
-        <div class="radio-group">
-            <label>Tier:</label>
-            <input type="radio" name="message-tier" value="1000" checked> 1
-            <input type="radio" name="message-tier" value="2000"> 2
-            <input type="radio" name="message-tier" value="3000"> 3
-        </div>
-        <button onclick="testSubMessage()">Test</button>
-    </div>
-	
-	<div class="form-section">
-        <h2>Test Goal</h2>
-        <div class="radio-group">
-            <label>Type: </label><br>
-            <input type="radio" name="goal-type" value="follower" checked> Follower
-            <input type="radio" name="goal-type" value="subscriber"> Subscriber
-            <input type="radio" name="goal-type" value="subscription_count"> Sub Count
-            <input type="radio" name="goal-type" value="new_subscription"> New Sub
-			<input type="radio" name="goal-type" value="new_bits"> New Bits
-			<input type="radio" name="goal-type" value=""> Empty String
-        </div>
-        <div class="number-input">
-            <label>Current Amount: </label>
-            <input type="number" id="goal-current" value="7" min="0">
-        </div>
-        <div class="number-input">
-            <label>Target Amount: </label>
-            <input type="number" id="goal-target" value="10" min="1">
-        </div>
-        <button onclick="testGoal()">Test</button>
-    </div>
-
-    <div class="form-section">
-        <h2>Test Hype Train Progress</h2>
-        <div class="number-input">
-            <label>Level: </label>
-            <input type="number" id="hype-level" value="1" min="1">
-        </div>
-        <div class="number-input">
-            <label>Total: </label>
-            <input type="number" id="hype-total" value="137" min="0">
-        </div>
-        <div class="number-input">
-            <label>Progress: </label>
-            <input type="number" id="hype-progress" value="37" min="0">
-        </div>
-        <button onclick="testHypeTrain()">Test</button>
-    </div>
-
-    <div class="form-section">
-        <h2>Test Hype Train End</h2>
-        <div class="number-input">
-            <label>Final Level: </label>
-            <input type="number" id="hype-end-level" value="3" min="1">
-        </div>
-        <div class="number-input">
-            <label>Final Total: </label>
-            <input type="number" id="hype-end-total" value="437" min="0">
-        </div>
-        <button onclick="testHypeTrainEnd()">Test</button>
-    </div>
     <script>
-        function getSelectedRadioValue(name) {
-            return document.querySelector(`input[name="${name}"]:checked`).value;
+        async function clearWait() {
+            try {
+                const response = await fetch('http://localhost:5050/obs/clearwait', {
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    showStatus('Wait cleared successfully!', 'success');
+                } else {
+                    showStatus('Failed to clear wait!', 'error');
+                }
+            } catch (error) {
+                showStatus('Error clearing wait!', 'error');
+            }
         }
-        async function testCheer() {
-            const amount = document.getElementById('cheer-amount').value;
-            const anon = getSelectedRadioValue('cheer-anon');
-            const response = await fetch(`http://localhost:5050/testcheer/${amount}/${anon}`);
-            const data = await response.json();
-            console.log(data);
-        }
-        async function testSub() {
-            const tier = getSelectedRadioValue('single-tier');
-            const gifted = getSelectedRadioValue('gifted');
-            const response = await fetch(`http://localhost:5050/testsub/${tier}/${gifted}`);
-            const data = await response.json();
-            console.log(data);
+        class SubathonController {
+            constructor() {
+                this.apiBaseUrl = 'http://localhost:5050/subathon';
+                this.initializeEventListeners();
+                this.startPeriodicUpdates();
+            }
+
+            // API Methods
+            async callApi(cmd, args = {}, method = 'POST') {
+                try {
+                    const url = `${this.apiBaseUrl}/${cmd}`;
+
+                    const options = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: method === 'POST' ? JSON.stringify(args) : undefined
+                    };
+
+                    const response = await fetch(url, options);
+                    const text = await response.text();
+
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (error) {
+                        showStatus(`Failed to parse JSON: ${text}`, 'error');
+                        throw new Error(`Failed to parse JSON: ${text}`);
+                    }
+                    return data;
+                } catch (error) {
+                    console.error('API Error:', error);
+                    showStatus(error.message, 'error');
+                    return null;
+                }
+            }
+
+            updateStats(stats) {
+                const statsDisplay = document.getElementById('statsDisplay');
+                statsDisplay.innerHTML = '';
+                for (const [key, value] of Object.entries(stats)) {
+                    if (key === "remaining") continue;  // Skip the remaining time field
+                    const labelElement = document.createElement('div');
+                    labelElement.className = 'stat-label';
+                    // Capitalize the first letter of the key and replace underscores with spaces
+                    const formattedKey = key.charAt(0).toUpperCase() + 
+                                        key.slice(1).replace(/_/g, ' ');
+                    labelElement.innerHTML = `${formattedKey}: <span>${value}</span>`;
+                    statsDisplay.appendChild(labelElement);
+                }
+                // Extract and display the remaining time
+                const remainingTime = Math.round(stats.remaining);  // Round to the nearest integer
+                document.getElementById('timeRemaining').textContent = this.formatTime(remainingTime);
+            }
+
+            formatTime(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                return `${hours}h ${minutes}m ${remainingSeconds}s`;
+            }
+
+            // Control Methods
+            async controlSubathon(cmd) {
+                const method = cmd === 'pause' || cmd === 'resume' || cmd === 'stats' ? 'GET' : 'POST';
+                const response = await this.callApi(cmd, {}, method);
+                if (response?.status) {
+                    this.updateStats(response.data);
+                }
+            }
+
+            async startNewSubathon() {
+                const init_mins = parseFloat(document.getElementById('initialMinutes').value) * 60
+                const init_time = init_mins + parseFloat(document.getElementById('initialSeconds').value);
+                const response = await this.callApi(`new/${init_time}`, {}, 'POST');
+                if (response?.status) {
+                    this.updateStats(response.data);
+                }
+            }
+
+            async addTime() {
+                const amount = parseInt(document.getElementById('amount').value);
+                const multiplier = document.getElementById('multiplier').value || null;
+                const response = await this.callApi('addtime', { amount, multiplier }, 'POST');
+                if (response?.status) {
+                    this.updateStats(response.data);
+                }
+            }
+
+            async removeTime() {
+                const amount = parseInt(document.getElementById('amount').value);
+                const multiplier = document.getElementById('multiplier').value || null;
+                const response = await this.callApi('removetime', { amount, multiplier }, 'POST');
+                if (response?.status) {
+                    this.updateStats(response.data);
+                }
+            }
+
+            // Initialization Methods
+            initializeEventListeners() {
+                document.addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+
+                    const action = button.dataset.action;
+                    if (!action) return;
+
+                    switch (action) {
+                        case 'pause':
+                        case 'resume':
+                            this.controlSubathon(action);
+                            break;
+                        case 'startNew':
+                            this.startNewSubathon();
+                            break;
+                        case 'addTime':
+                            this.addTime();
+                            break;
+                        case 'removeTime':
+                            this.removeTime();
+                            break;
+                    }
+                });
+            }
+
+            async startPeriodicUpdates() {
+                try {
+                    const data = await this.callApi('stats', {}, 'GET');
+                    if (data?.status) {
+                        this.updateStats(data.data);
+                    }
+                } catch (error) {
+                    console.error('Stats initialization error:', error);
+                }
+
+                setInterval(async () => {
+                    try {
+                        const data = await this.callApi('stats', {}, 'GET');
+                        if (data?.status) {
+                            this.updateStats(data.data);
+                        }
+                    } catch (error) {
+                        console.error('Stats update error:', error);
+                    }
+                }, 1000);
+            }
         }
 
-        async function testSubGift() {
-            const amount = document.getElementById('gift-amount').value;
-            const tier = getSelectedRadioValue('gift-tier');
-            const anon = getSelectedRadioValue('anon');
-            const response = await fetch(`http://localhost:5050/testsubgift/${amount}/${tier}/${anon}`);
-            const data = await response.json();
-            console.log(data);
+        // Initialize the SubathonController
+        new SubathonController();
+        async function testEvent(eventType) {
+            const data = {};
+            
+            switch(eventType) {
+                case 'channel.cheer':
+                case 'channel.bits.use':
+                    data.bits = document.getElementById('bitsAmount').value;
+                    data.anon = document.getElementById('bitsAnon').checked;
+                    break;
+                case 'channel.subscribe':
+                    data.tier = document.getElementById('subTier').value;
+                    data.gifted = document.getElementById('subGifted').checked;
+                    break;
+                case 'channel.subscription.gift':
+                    data.total = document.getElementById('giftTotal').value;
+                    data.tier = document.getElementById('giftTier').value;
+                    data.anon = document.getElementById('giftAnon').checked;
+                    break;
+                case 'channel.subscription.message':
+                    data.tier = document.getElementById('resubTier').value;
+                    data.months = document.getElementById('resubMonths').value;
+                    data.streak = document.getElementById('resubStreak').value;
+                    data.msg = document.getElementById('resubMsg').value;
+                    break;
+                case 'channel.goal.progress':
+                    data.type = document.getElementById('goalType').value;
+                    data.current = document.getElementById('goalCurrent').value;
+                    data.target = document.getElementById('goalTarget').value;
+                    break;
+                case 'channel.hype_train.progress':
+                case 'channel.hype_train.end':
+                    data.level = document.getElementById('hypeLevel').value;
+                    data.total = document.getElementById('hypeTotal').value;
+                    data.progress = document.getElementById('hypeProgress').value;
+                    break;
+                case 'channel.chat.notification':
+                    data.system_message = document.getElementById('notificationMsg').value;
+                    break;
+                case 'channel.follow':
+                    data.user_name = document.getElementById('followUsername').value;
+                    break;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5050/test/${eventType}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showStatus('Event sent successfully!', 'success');
+                } else {
+                    showStatus('Failed to send event!', 'error');
+                }
+            } catch (error) {
+                showStatus('Error sending event!', 'error');
+            }
         }
 
-        async function testSubMessage() {
-            const months = document.getElementById('months').value;
-            const streak = document.getElementById('streak').value;
-            const duration = document.getElementById('duration').value;
-            const tier = getSelectedRadioValue('message-tier');
-            const response = await fetch(`http://localhost:5050/testsubmessage/${months}/${tier}/${streak}/${duration}`);
-            const data = await response.json();
-            console.log(data);
-        }
-		
-        async function testGoal() {
-            const type = getSelectedRadioValue('goal-type');
-            const current = document.getElementById('goal-current').value;
-            const target = document.getElementById('goal-target').value;
-            const response = await fetch(`http://localhost:5050/testgoal/${type}/${current}/${target}`);
-            const data = await response.json();
-            console.log(data);
-        }
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            statusElement.className = `status-message ${type}`;
+            statusElement.style.display = 'block';
 
-        async function testHypeTrain() {
-            const level = document.getElementById('hype-level').value;
-            const total = document.getElementById('hype-total').value;
-            const progress = document.getElementById('hype-progress').value;
-            const response = await fetch(`http://localhost:5050/testhypetrain/${level}/${total}/${progress}`);
-            const data = await response.json();
-            console.log(data);
-        }
-
-        async function testHypeTrainEnd() {
-            const level = document.getElementById('hype-end-level').value;
-            const total = document.getElementById('hype-end-total').value;
-            const response = await fetch(`http://localhost:5050/testhypetrainend/${level}/${total}`);
-            const data = await response.json();
-            console.log(data);
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
         }
     </script>
+
 </body>
 </html>

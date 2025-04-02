@@ -46,7 +46,7 @@ body {
 	border-radius: 10px 10px 0px 0px;
 	margin: 0px 5px;
 	padding-right: 7px;
-	background-color: #ffffff30;
+	background-color: var(--bg-gray);
 	box-shadow: 1px 1px 3px rgba(134, 134, 134, 0.5) inset;
 	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
 	align-items: center;
@@ -96,7 +96,7 @@ body {
 
 .percent-value{
 	color: #fff;
-	background-color: #006c5838;
+	background-color: #06060673;
 	border-radius: 5px;
 	padding: 0px 7px 2px 7px;
 	margin-left: 5px;

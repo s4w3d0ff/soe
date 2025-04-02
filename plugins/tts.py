@@ -1,6 +1,7 @@
 import edge_tts
 from pathlib import Path
-from poolguy.utils import logging, asyncio
+import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 

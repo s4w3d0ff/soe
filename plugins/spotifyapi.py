@@ -1,5 +1,9 @@
+import logging
+import re
+from functools import wraps
 from spotifio import Client
-from poolguy.utils import logging, re, wraps
+from poolguy import TwitchBot
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +38,7 @@ def duck_volume(volume=20):
             # Get spotify instance from the Alert's bot
             spotify = self.bot.spotify
             old_vol = None
+            r = False
             try:
                 # Store original volume
                 old_vol = await spotify.get_current_volume()
@@ -54,14 +59,21 @@ def duck_volume(volume=20):
 
 class Spotify(Client):
     async def get_current_volume(self):
-        state = await self.get_playback_state()
+        try:
+            state = await self.get_playback_state()
+        except:
+            return None
         if state and 'device' in state:
             return state['device'].get('volume_percent')
         return None
 
     async def set_volume(self, volume):
         volume = max(0, min(100, volume))
-        await self.set_playback_volume(volume)
+        try:
+            await self.set_playback_volume(volume)
+            return True
+        except:
+            return False
 
     async def get_now_playing(self):
         current = await self.get_currently_playing()
@@ -93,3 +105,15 @@ class Spotify(Client):
                 'album_art_url': track['album']['images'][0]['url'] if track['album']['images'] else None
             })
         return tracks
+
+#==========================================================================================
+# SpotifyBot ==============================================================================
+#==========================================================================================
+class SpotifyBot(TwitchBot):
+    def __init__(self, spotify_cfg, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.spotify = Spotify(**spotify_cfg)
+
+    async def after_login(self):
+        self.spotify.token_handler.storage = self.http.storage
+        await self.spotify.login()
