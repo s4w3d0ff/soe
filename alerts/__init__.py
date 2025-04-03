@@ -15,7 +15,6 @@ from plugins.tts import generate_speech, VOICES
 
 logger = logging.getLogger(__name__)
 
-
 ###################=========---------
 ### channel.ban ###=============---------
 ###################=================---------
@@ -76,7 +75,7 @@ class ChannelBanAlert(Alert):
         name = self.data['user_name']
         logger.debug(f"[Alert] Ban: starting ai thread")
         q = f'Please inform everyone that "{name}" was just {dur} from the chat for the reason: "{reason if reason else "Acting like a bot"}".'
-        if self.bot.ai:
+        if hasattr(self.bot, 'ai'):
             self.ai_thread = self.bot.ai.threaded_ask(q)
         else:
             await self.bot.http.sendChatMessage(f'Get rekt {name} Modding')
@@ -311,8 +310,11 @@ class ChannelBitsUseAlert(Alert):
 
     async def process(self):
         logger.info(f"[Bot] Bits: \n{json.dumps(self.data, indent=2)}")
+        amount = int(self.data['bits'])
+        if hasattr(self.bot, 'subathon'):
+            if self.bot.subathon.is_running():
+               self.bot.subathon.add_time(amount, 'bits')
         if self.data["type"] == "cheer":
-            amount = int(self.data['bits'])
             alertK = None
             for k in [*cheer_cfg]:
                 if amount < int(k):
@@ -360,18 +362,22 @@ class ChannelRaidAlert(Alert):
         raidFrom = self.data['from_broadcaster_user_name']
         raidTo = self.data['to_broadcaster_user_name']
         views = self.data['viewers']
-        if self.bot.ai:
+        if hasattr(self.bot, 'subathon'):
+            if self.bot.subathon.is_running():
+               self.bot.subathon.add_time(int(views), 'raid')
+        if hasattr(self.bot, 'ai'):
             r = self.bot.ai.ask(f'{raidFrom} is raiding {raidTo} with {views} viewers!, please inform chat.')
         else:
             r = f"{raidFrom} thank you for the {views} viewer raid!"
         await self.bot.http.sendChatMessage(f'{r}')
-        await self.bot.obsws.set_source_text(self.bit_text, f" {raidFrom} is raiding with {views} viewers!")
-        for a in self.bit_altscenes:
-            await self.bot.obsws.show_source(a, self.bit_scene)
-        await self.bot.obsws.show_and_wait('hotfeet', self.bit_scene)
-        await self.bot.obsws.set_source_text(self.bit_text, "")
-        for a in self.bit_altscenes:
-            await self.bot.obsws.hide_source(a, self.bit_scene)
+        if hasattr(self.bot, 'obsws'):
+            await self.bot.obsws.set_source_text(self.bit_text, f" {raidFrom} is raiding with {views} viewers!")
+            for a in self.bit_altscenes:
+                await self.bot.obsws.show_source(a, self.bit_scene)
+            await self.bot.obsws.show_and_wait('hotfeet', self.bit_scene)
+            await self.bot.obsws.set_source_text(self.bit_text, "")
+            for a in self.bit_altscenes:
+                await self.bot.obsws.hide_source(a, self.bit_scene)
 
 
 ######################=========---------
@@ -409,11 +415,12 @@ class ChannelGoalProgressAlert(Alert):
     async def process(self):
         logger.debug(f"{json.dumps(self.data, indent=2)}")
         g_type = self.data['type']
-        await self.bot.goal_queue.put({
-                "gtype": g_type,
-                "amount": int(self.data['current_amount'])
-            })
-        logger.warning(f"{g_type} goal updated to {self.data['current_amount']}")
+        if hasattr(self.bot, 'goal_queue'):
+            await self.bot.goal_queue.put({
+                    "gtype": g_type,
+                    "amount": int(self.data['current_amount'])
+                })
+            logger.warning(f"{g_type} goal updated to {self.data['current_amount']}")
 
 
 ###################################=========---------
@@ -432,9 +439,10 @@ class ChannelHypeTrainProgressAlert(Alert):
     queue_skip = True
 
     async def process(self):
-        for k in hype_cfg:
-            if int(k) <= self.data['level']:
-                await self.bot.obsws.show_source(hype_cfg[k], hype_scene)
+        if hasattr(self.bot, 'obsws'):
+            for k in hype_cfg:
+                if int(k) <= self.data['level']:
+                    await self.bot.obsws.show_source(hype_cfg[k], hype_scene)
 
 
 ##############################=========---------
@@ -444,8 +452,9 @@ class ChannelHypeTrainEndAlert(Alert):
     queue_skip = True
 
     async def process(self):
-        for k in hype_cfg:
-            await self.bot.obsws.hide_source(hype_cfg[k], hype_scene)
+        if hasattr(self.bot, 'obsws'):
+            for k in hype_cfg:
+                await self.bot.obsws.hide_source(hype_cfg[k], hype_scene)
 
 
 #########################=========---------
@@ -463,14 +472,19 @@ class ChannelSubscribeAlert(Alert):
     async def _process(self):
         name = self.data['user_name']
         tier = int(self.data['tier'][0])
-        await self.bot.obsws.set_source_text(sub_text, f" {name} subscribed! \n-tier {tier}-")
-        for a in sub_altscenes:
-            await self.bot.obsws.show_source(a, sub_scene)
-        await self.bot.obsws.show_and_wait('yaaay', sub_scene)
-        await self.bot.obsws.set_source_text(sub_text, "")
-        for a in sub_altscenes:
-            await self.bot.obsws.hide_source(a, sub_scene)
-    
+        # add time to the subathon
+        if hasattr(self.bot, 'subathon'):
+            if self.bot.subathon.is_running():
+               self.bot.subathon.add_time(1, f't{tier}')
+        if hasattr(self.bot, 'obsws'):
+            await self.bot.obsws.set_source_text(sub_text, f" {name} subscribed! \n-tier {tier}-")
+            for a in sub_altscenes:
+                await self.bot.obsws.show_source(a, sub_scene)
+            await self.bot.obsws.show_and_wait('yaaay', sub_scene)
+            await self.bot.obsws.set_source_text(sub_text, "")
+            for a in sub_altscenes:
+                await self.bot.obsws.hide_source(a, sub_scene)
+        
     async def process(self):
         logger.error(f"{self.channel}:\n{json.dumps(self.data, indent=2)}")
         if self.data['is_gift']:
@@ -491,13 +505,19 @@ class ChannelSubscriptionGiftAlert(Alert):
         name = "Anonymous" if self.data['is_anonymous'] else self.data['user_name']
         total = self.data['total']
         tier = self.data['tier'][0]
-        await self.bot.obsws.set_source_text(sub_text, f" {name} gifted {total} subs! \n-tier {tier}-")
-        for a in sub_altscenes:
-            await self.bot.obsws.show_source(a, sub_scene)
-        await self.bot.obsws.show_and_wait('reallynice', sub_scene)
-        await self.bot.obsws.set_source_text(sub_text, "")
-        for a in sub_altscenes:
-            await self.bot.obsws.hide_source(a, sub_scene)
+        # add time to the subathon
+        if hasattr(self.bot, 'subathon'):
+            if self.bot.subathon.is_running():
+               self.bot.subathon.add_time(total, f't{tier}')
+
+        if hasattr(self.bot, 'obsws'):
+            await self.bot.obsws.set_source_text(sub_text, f" {name} gifted {total} subs! \n-tier {tier}-")
+            for a in sub_altscenes:
+                await self.bot.obsws.show_source(a, sub_scene)
+            await self.bot.obsws.show_and_wait('reallynice', sub_scene)
+            await self.bot.obsws.set_source_text(sub_text, "")
+            for a in sub_altscenes:
+                await self.bot.obsws.hide_source(a, sub_scene)
 
 
 #################################=========---------
@@ -513,19 +533,24 @@ class ChannelSubscriptionMessageAlert(Alert):
         name = self.data['user_name']
         tier = int(self.data['tier'][0])
         total_months = self.data['cumulative_months']
-        tts_fp = None
-        if self.data["message"]:
-            voice = random.choice(list(VOICES.keys()))
-            tts_fp = await generate_speech(self.data['message']['text'], "db/sub_tts.mp3", voice)
-        await self.bot.obsws.set_source_text(sub_text, f" {name} has been subscribed for {int(total_months)} months!")
-        for a in sub_altscenes:
-            await self.bot.obsws.show_source(a, sub_scene)
-        await self.bot.obsws.show_and_wait('goingupthere', sub_scene)
-        await self.bot.obsws.set_source_text(sub_text, "")
-        for a in sub_altscenes:
-            await self.bot.obsws.hide_source(a, sub_scene)
-        if tts_fp:
-            await self.bot.obsws.show_and_wait('sub_tts', sub_scene)
+        # add time to the subathon
+        if hasattr(self.bot, 'subathon'):
+            if self.bot.subathon.is_running():
+               self.bot.subathon.add_time(1, f't{tier}')
+        if hasattr(self.bot, 'obsws'):
+            tts_fp = None
+            if self.data["message"]:
+                voice = random.choice(list(VOICES.keys()))
+                tts_fp = await generate_speech(self.data['message']['text'], "db/sub_tts.mp3", voice)
+            await self.bot.obsws.set_source_text(sub_text, f" {name} has been subscribed for {int(total_months)} months!")
+            for a in sub_altscenes:
+                await self.bot.obsws.show_source(a, sub_scene)
+            await self.bot.obsws.show_and_wait('goingupthere', sub_scene)
+            await self.bot.obsws.set_source_text(sub_text, "")
+            for a in sub_altscenes:
+                await self.bot.obsws.hide_source(a, sub_scene)
+            if tts_fp:
+                await self.bot.obsws.show_and_wait('sub_tts', sub_scene)
 
 
 

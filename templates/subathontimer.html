@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subathon Timer</title>
+    <style>
+        @font-face {
+            font-family: 'Advanced Pixel LCD-7';
+            src: url('/static/fonts/AdvancedPixelLcd-Regular.ttf') format('truetype');
+        }
+
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Advanced Pixel LCD-7', monospace;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 830px;
+        }
+
+        /* Scroll container styles */
+        .scroll-container {
+            display: flex;
+            overflow: hidden;
+            background-color: #000;
+            padding: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            width: 100%;
+        }
+
+        .scroll-content {
+            display: flex;
+            flex-shrink: 0;
+            min-width: 100%;
+            gap: 1rem;
+            color: #00ff00;
+            font-size: 24px;
+            white-space: nowrap;
+        }
+
+        .scroll-horizontal .scroll-content {
+            animation: scrollHorizontal 20s linear infinite;
+        }
+
+        @keyframes scrollHorizontal {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
+
+        .digital-clock {
+            background-color: #000;
+            padding: 14px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .display {
+            background-color: #000;
+            padding: 20px 40px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .digits {
+            font-size: 78px;
+            color: #00ff00;
+            text-shadow: 0 0 100px rgba(0, 255, 0, 0.9);
+        }
+
+        .display::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                transparent 0%,
+                rgba(0, 0, 0, 0.2) 50%,
+                transparent 100%
+            );
+            background-size: 100% 5px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="digital-clock">
+            <div class="display">
+                <div class="digits" id="timer">00:00:00</div>
+            </div>
+        </div>
+        <div class="scroll-container scroll-horizontal">
+            <div class="scroll-content" id="statsContent"></div>
+            <div class="scroll-content" aria-hidden="true" id="statsContentClone"></div>
+        </div>
+    </div>
+
+    <script>
+        function formatTime(seconds, includeHours = true) {
+            if (includeHours) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = Math.floor(seconds % 60);
+                
+                return [hours, minutes, secs]
+                    .map(v => v.toString().padStart(2, '0'))
+                    .join(':');
+            } else {
+                const minutes = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                
+                return [minutes, secs]
+                    .map(v => v.toString().padStart(2, '0'))
+                    .join(':');
+            }
+        }
+
+        function formatStats(data) {
+            const stats = [];
+            for (const [key, value] of Object.entries(data)) {
+                if (key !== 'remaining') {
+                    stats.push(`_. ${key}= ${formatTime(value, false)} ._`);
+                }
+            }
+            return stats.join('');
+        }
+
+        async function updateDisplay() {
+            try {
+                const response = await fetch('/subathon/stats');
+                const data = await response.json();
+                
+                if (data.status && data.data.remaining !== undefined) {
+                    // Update timer
+                    const timerElement = document.getElementById('timer');
+                    timerElement.textContent = formatTime(data.data.remaining);
+
+                    // Update stats
+                    const statsText = formatStats(data.data);
+                    const statsContent = document.getElementById('statsContent');
+                    const statsContentClone = document.getElementById('statsContentClone');
+                    
+                    statsContent.textContent = statsText;
+                    statsContentClone.textContent = statsText;
+
+                    // Adjust animation duration based on content length
+                    const scrollWidth = statsContent.offsetWidth;
+                    const scrollDuration = Math.max(20, scrollWidth / 50); // 50 pixels per second
+                    const scrollContents = document.querySelectorAll('.scroll-content');
+                    scrollContents.forEach(content => {
+                        content.style.animationDuration = `${scrollDuration}s`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Update immediately and then every second
+        updateDisplay();
+        setInterval(updateDisplay, 1000);
+    </script>
+</body>
+</html>

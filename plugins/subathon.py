@@ -5,7 +5,7 @@ import asyncio
 import os
 from aiohttp import web
 from typing import Callable, Dict, Optional
-from poolguy import TwitchBot, route
+from poolguy import TwitchBot, route, command, rate_limit
 from poolguy.storage import loadJSON, saveJSON
 
 logger = logging.getLogger(__name__)
@@ -141,20 +141,16 @@ class Subathon:
         """Add time to the countdown based on the given multiplier."""
         if multiplier:
             seconds = amount * self.value_multipliers[multiplier] * self.time_multiplier
-            logger.info(f"Adding {amount} {multiplier}(s), which is {seconds/60:.2f} minutes.")
         else:
             seconds = amount
-            logger.info(f"Adding {amount} seconds.")
         self.timer.add_time(seconds)
 
     def remove_time(self, amount, multiplier=None):
         """Remove time from the countdown based on the given multiplier."""
         if multiplier:
             seconds = amount * self.value_multipliers[multiplier] * self.time_multiplier
-            logger.info(f"Removing {amount} {multiplier}(s), which is {seconds/60:.2f} minutes.")
         else:
             seconds = amount
-            logger.info(f"Removing {amount} seconds.")
         self.timer.remove_time(seconds)
 
     def start(self):
@@ -246,3 +242,19 @@ class SubathonBot(TwitchBot):
         self.subathon = Subathon(**cfg)
         self.subathon.start()
         return web.json_response({"status": True, "data": self.subathon.get_stats()})
+
+    @command(name="subathon", aliases=["streamathon"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def subathon_cmd(self, user, channel, args):
+        """Shows Subathon stats """
+        if self.subathon.is_running():
+            remaining_time = self.subathon.get_time_left()
+            if remaining_time >= 60:
+                remaining_time = f"{int(remaining_time / 60)} minutes and {int(remaining_time % 60)} seconds"
+            else:
+                remaining_time = f"{int(remaining_time)} seconds"
+            await self.http.sendChatMessage(f"Subathon is currently running with {remaining_time} left!", broadcaster_id=channel["broadcaster_id"])
+            txt = "".join(
+                [f"[ {k} = {v} second(s) ]" if v < 60 else f"[ {k} = {int(v / 60)} minute(s) and {int(v % 60)} second(s) ]" for k, v in self.subathon.value_multipliers.items()]
+                )
+            await self.http.sendChatMessage(txt, broadcaster_id=channel["broadcaster_id"])
