@@ -251,6 +251,22 @@
             </div>
         </div>
 
+        <!-- Raid Section -->
+        <div class="card">
+            <h2>channel.raid</h2>
+            <div class="input-group">
+                <label>Viewers:</label>
+                <input type="number" id="viewerAmount" value="100">
+            </div>
+            <div class="input-group">
+                <label>From:</label>
+                <input type="text" id="raidFrom" value="Cool_User" style="width: 120px;">
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.raid')">Test Raid</button>
+            </div>
+        </div>
+
         <!-- Subscribe Section -->
         <div class="card">
             <h2>channel.subscribe</h2>
@@ -548,6 +564,11 @@
                     data.bits = document.getElementById('bitsAmount').value;
                     data.anon = document.getElementById('bitsAnon').checked;
                     break;
+                case 'channel.raid':
+                    data.viewers = document.getElementById('viewerAmount').value;
+                    data.from = document.getElementById('raidFrom').value;
+                    break;
+
                 case 'channel.subscribe':
                     data.tier = document.getElementById('subTier').value;
                     data.gifted = document.getElementById('subGifted').checked;
