@@ -1,5 +1,5 @@
 {
-	"http_config": {
+	"twitch_config": {
 		"redirect_uri": "http://localhost:5050/callback",
 		"scopes": [
 			"channel:moderate", 
@@ -7,6 +7,7 @@
 			"channel:read:hype_train",
 			"channel:read:goals",
 			"channel:read:charity",
+			"channel:read:vips",
 			"channel:manage:polls",
 			"channel:manage:raids",
 			"channel:manage:predictions",
@@ -22,15 +23,14 @@
 			"moderator:manage:banned_users",
 			"moderator:manage:shoutouts",
 			"moderator:read:followers"
-		]
-	},
-	"ws_config": {
-		"storage_type": "json",
+		],
+		"storage": "json",
+		"browser": {"librewolf": "C:\\Program Files\\LibreWolf\\librewolf.exe"},
 		"channels": {
 			"channel.channel_points_custom_reward_redemption.add": null,
 			"channel.ban": null,
 			"channel.follow": null,
-			"channel.cheer": null,
+			"channel.bits.use": null,
 			"channel.raid": null,
 			"channel.chat.notification": null,
 			"channel.chat.message": null,
@@ -41,44 +41,43 @@
 			"channel.hype_train.progress": null,
 			"channel.hype_train.end": null
 		},
-		"queue_skip": [
-			"channel.chat.message",
-			"channel.goal.progress",
-			"channel.hype_train.progress",
-			"channel.hype_train.end",
-			"channel.chat.notification"
-		]
-	},
-	"ai_cfg": {
-		"persona": "GenZbot",
-		"model": "Llama323BF16", 
-		"device": "cuda"
+		"static_dirs": ["static"]
 	},
 	"obs_cfg":{
 		"host": "localhost",
-		"port": "8989",
-		"password": "xwpassworduG",
+		"port": "4455",
 		"ignore_media": ["RustFlashbang", "Sun Spin", "flies", "fire1", "fire2", "fire3", "fire4"],
 		"media_scenes": ["[S] Videos", "[S] TWSS", "[S] Bit Alerts"]
 	},
 	"spotify_cfg": {
-		"client_id": "123b0d5client_id4fcfcb05",
-		"client_secret": "d27cclient_secret5dc1234", 
-		"redirect_uri": "http://localhost:8080",
+		"redirect_uri": "http://localhost:5050/spotify_oauth",
 		"scope" : [
 			"user-read-currently-playing", 
 			"user-modify-playback-state",
 			"user-read-playback-state",
 			"playlist-modify-public", 
 			"playlist-modify-private"
-			]
+		]
 	},
 	"goals_cfg": {
 		"name": "mygoal",
 		"total": 84000
 	},
-	"login_browser": {"firefox": "C:\\Program Files\\Mozilla Firefox\\firefox.exe"},
+	"eft_config":{
+		"base_log_path": "C:\\Battlestate Games\\Escape from Tarkov\\Logs",
+		"log_names": ["application", "network-connection"]
+	},
+	"subathon_cfg": {
+        "time_multiplier": 1,
+        "value_multipliers": {
+            "bits": 1, 
+            "t1": 260, 
+            "t2": 480, 
+            "t3": 1225,
+			"raid": 15
+        }
+    },
 	"max_retries": 60,
-	"retry_delay": 5,
-	"static_dirs": ["static"]
+	"retry_delay": 10,
+	"tags": ["420", "Veteran", "Autistic"]
 }

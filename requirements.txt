@@ -1,13 +1,7 @@
-transformers
-gguf
-accelerate
-pycaw
-pywin32
 keyboard
 pydub
 edge_tts
 simpleobsws
-trendspy
 rich
 git+https://github.com/s4w3d0ff/spotifio.git
 git+https://github.com/s4w3d0ff/pool-guy.git

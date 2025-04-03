@@ -291,6 +291,21 @@ test_payloads = {
             "source_message_id": None,
             "source_badges": None
         }
+    },
+    "channel.raid": {
+        "subscription": {
+            "id": "test_"+randString(),
+            "type": "channel.raid"
+        },
+        "event": {
+            "from_broadcaster_user_id": "1234",
+            "from_broadcaster_user_login": "cool_user",
+            "from_broadcaster_user_name": "Cool_User",
+            "to_broadcaster_user_id": "1337",
+            "to_broadcaster_user_login": "cooler_user",
+            "to_broadcaster_user_name": "Cooler_User",
+            "viewers": 9001
+        }
     }
 }
 
@@ -313,9 +328,12 @@ class TesterBot(TwitchBot):
         cmd = request.match_info['cmd']
         args = await request.json()
         logger.info(f"/test/{cmd}, {args = }")
-
         payload = {}
         match cmd:
+            case "channel.raid":
+                payload = test_payloads["channel.raid"]
+                payload["event"]["viewers"] = int(args.get("viewers", 1))
+                payload["event"]["from_broadcaster_user_name"] = args.get("from", "Cool_User")
             case "channel.cheer":
                 payload = test_payloads["channel.cheer"]
                 payload["event"]["bits"] = int(args.get("bits", 1))

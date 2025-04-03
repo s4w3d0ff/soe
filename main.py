@@ -15,16 +15,23 @@ logger = logging.getLogger(__name__)
 #==========================================================================================
 # MainBot =================================================================================
 #==========================================================================================
-class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, AIBot, SpotifyBot, TarkovBot, CommandBot, TesterBot):
+class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, CommandBot, TesterBot):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
         client_id = os.getenv("SOE_CLIENT_ID")
         client_secret = os.getenv("SOE_CLIENT_SECRET")
-        if not client_id or not client_secret:
-            raise ValueError("Environment variables SOE_CLIENT_ID and SOE_CLIENT_SECRET are required")
+        spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
+        spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+        obsws_password = os.getenv("OBSWS_PASSWORD")
+        if not client_id or not client_secret or not spotify_client_id or not spotify_client_secret:
+            raise ValueError(f"Environment variables are required: {[
+                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'OBSWS_PASSWORD'
+                ]}")
         kwargs['twitch_config']['client_id'] = client_id
         kwargs['twitch_config']['client_secret'] = client_secret
-        #===============================================
+        kwargs['spotify_cfg']['client_id'] = spotify_client_id
+        kwargs['spotify_cfg']['client_secret'] = spotify_client_secret
+        kwargs['obs_cfg']['password'] = obsws_password
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
