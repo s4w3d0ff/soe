@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subathon UI</title>
+    <link rel="stylesheet" href="/static/css/subathon_ui.css">
+    <script src="/static/js/subathon_ui.js"></script>
+</head>
+<body>
+<div class="container">
+    <!-- Subathon Status Card -->
+    <div class="card">
+        <h2>Subathon</h2>
+        <div class="time-display" id="timeRemaining">Loading...</div>
+        <div class="control-group">
+            <button style="background-color: #4897615c;" data-action="resume">Resume</button>
+            <button style="background-color: #9748485c;" data-action="pause">Pause</button>
+        </div>
+        <div class="section-title">Multipliers</div>
+        <div id="statsDisplay"></div>
+        <div class="section-divider"></div>
+        <div class="input-group">
+            <input type="number" id="amount" value="0" min="0">
+            <label for="amount">Amount</label>
+            <input type="text" id="multiplier" value="">
+            <label for="multiplier">Multiplier</label>
+        </div>
+        <div class="control-group">
+            <button data-action="addTime">Add Time</button>
+            <button data-action="removeTime">Remove Time</button>
+        </div>
+        <div class="section-divider"></div>
+        <div class="input-group">
+            <button style="padding: 2px;" data-action="startNew">Start New</button>
+            <input type="number" id="initialMinutes" value="300" min="0">
+            <label for="initialMinutes">Minutes</label>
+            <input type="number" id="initialSeconds" value="1" min="0">
+            <label for="initialSeconds">Seconds</label>
+        </div>
+    </div>
+</div>
+<div id="statusMessage" class="status-message"></div>
+<script>
+new SubathonController();
+</script>
+</body>
+</html>

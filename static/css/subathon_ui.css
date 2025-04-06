@@ -1,0 +1,55 @@
+@import "base_ui.css";
+.time-display {
+    font-size: 4.2em;
+    text-align: center;
+    color: var(--accent-color);
+    margin: -2px 0 0px 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    background: #1a1a1a7a;
+    border-radius: 12px;
+    padding-top: 5px;
+}
+#statsDisplay {
+    background: #1a1a1a7a;
+    padding: 5px;
+    border-radius: 0px 0px 10px 10px;
+    font-family: 'BebasNeue';
+    font-size: 1.1em;
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+.stat-label {
+    font-size: 1em;
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 5px;
+    min-width: 26%;
+    background: var(--card-bg);
+    border-radius: 4px;
+    box-shadow: var(--card-box-shadow);
+    border: 1px solid var(--input-border-color);
+    color: var(--accent-color);
+}
+.stat-label span {
+    font-family: 'Silkscreen';
+    color: beige;
+    padding: 0px 2px;
+    margin: -1px auto 0px auto;
+    font-size: 0.9em;
+}
+.section-title{
+    font-family: 'Silkscreen';
+    background: var(--bg-color);
+    font-size: 1.1em;
+    justify-content: center;
+    display: flex;
+    border-radius: 10px 10px 0px 0px;
+}
+.section-line{
+    border: none;
+    background-color: var(--bg-color);
+    height: 2px;
+    margin: 2px 0;
+}

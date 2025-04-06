@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue UI</title>
+    <link rel="stylesheet" href="/static/css/queue_ui.css">
+    <script src="/static/js/queue_ui.js"></script>
+</head>
+<body>
+<div class="container">
+    <!-- Queue Management Card -->
+    <div class="card">
+        <h2>Alert Queue</h2>
+        <div class="control-group">
+            <button style="background-color: #4897615c;" onclick="resumeQueue()">Resume</button>
+            <button style="background-color: #9748485c;" onclick="pauseQueue()">Pause</button>
+            <button onclick="clearWait()">Clear Wait</button>
+        </div>
+        <div id="queueItems" class="queue-items"></div>
+    </div>
+</div>
+<div id="statusMessage" class="status-message"></div>
+<script>
+    // Initialize the queue manager
+    const queueManager = new QueueManager();
+    // Global functions for the queue actions
+    function pauseQueue() {
+        queueManager.pauseQueue();
+    }
+    function resumeQueue() {
+        queueManager.resumeQueue();
+    }
+    async function clearWait() {
+        try {
+            const response = await fetch('/obs/clearwait', {
+                method: 'GET'
+            });
+
+            if (response.ok) {
+                showStatus('Wait cleared successfully!', 'success');
+            } else {
+                showStatus('Failed to clear wait!', 'error');
+            }
+        } catch (error) {
+            showStatus('Error clearing wait!', 'error');
+        }
+    }
+</script>
+</body>
+</html>
