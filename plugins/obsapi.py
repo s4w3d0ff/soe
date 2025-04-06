@@ -29,6 +29,7 @@ class OBSController:
             except Exception as e:
                 logger.error(f"Failed to connect to OBS: {e}")
                 await asyncio.sleep(15)
+        logger.warning(f"Failed to connect to OBS: {e}")
         out = {}
         for scene in self.media_scenes:
             items = await self._get_scene_item_list(scene)

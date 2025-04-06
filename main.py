@@ -5,6 +5,7 @@ import logging
 from aiohttp import web
 from poolguy.storage import loadJSON
 from poolguy import command, rate_limit, route, CommandBot
+from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, 
     SubathonBot, AIBot, GoalBot, BannedBot, OBSBot
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 #==========================================================================================
 # MainBot =================================================================================
 #==========================================================================================
-class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, CommandBot, TesterBot):
+class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, CommandBot, TesterBot, UIBot):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
         client_id = os.getenv("SOE_CLIENT_ID")
@@ -35,15 +36,15 @@ class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, Comm
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
-        await self.obsws._setup()
         self.spotify.token_handler.storage = self.http.storage
         await self.spotify.login()
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
             await self.http.server.start()
         await self.eft.start()
-        await self.refresh_obs_scenes()
         self.subathon.start()
         self.subathon.pause()
+        await self.obsws._setup()
+        await self.refresh_obs_scenes()
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Matrix Rain", scene_name="[S] Backgrounds")
@@ -81,7 +82,7 @@ class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, Comm
         return out
 
     @route('/endcredits')
-    async def endcredits(self, request):
+    async def endcredits_route(self, request):
         credits = "<br><h2>Director</h2>s4w3d0ff"
         subs = self._cleanSubs(await self.http.getBroadcasterSubscriptions())
         if len(subs['t3']) > 0:
@@ -102,31 +103,40 @@ class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, Comm
             return web.Response(text=rendered, content_type='text/html', charset='utf-8')
     
     @route('/matrix')
-    async def matrix(self, request):
+    async def matrix_route(self, request):
         async with aiofiles.open('templates/matrix.html', 'r', encoding='utf-8') as f:
+            template = await f.read()
+            return web.Response(text=template, content_type='text/html', charset='utf-8')
+
+    @route('/queue/ui')
+    async def queue_ui_route(self, request):
+        async with aiofiles.open('templates/queue_ui.html', 'r', encoding='utf-8') as f:
             template = await f.read()
             return web.Response(text=template, content_type='text/html', charset='utf-8')
 
     @command(name="cheers", aliases=["bits"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)
-    async def cheers(self, user, channel, args):
-        """Shows cheer list """
+    async def cheers_cmd(self, user, channel, args):
         cfg = loadJSON("db/cheers_cfg.json")
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
         out = ""
         for i in each:
             if len(out)+len(i) > 400:
-                await self.http.sendChatMessage(out, broadcaster_id=channel["broadcaster_id"])
+                await self.send_chat(out, channel["broadcaster_id"])
                 out = f"{i}"
             else:
                 out += f"{i}"
         if len(out) > 0:
-            await self.http.sendChatMessage(out, broadcaster_id=channel["broadcaster_id"])  
+            await self.send_chat(out, channel["broadcaster_id"])
 
-
+    @route('/ads')
+    async def ads_route(self, request):
+        async with aiofiles.open('templates/ads.html', 'r', encoding='utf-8') as f:
+            template = await f.read()
+            return web.Response(text=template, content_type='text/html', charset='utf-8')
 
 if __name__ == '__main__':
-    from alerts import alert_objs
+    from plugins.alerts import alert_objs
     from rich.logging import RichHandler
     logging.basicConfig(
         format='%(message)s',

@@ -317,9 +317,9 @@ def test_meta_data():
     }
 
 class TesterBot(TwitchBot):
-    @route('/testui')
-    async def testui(self, request):
-        async with aiofiles.open('templates/testui.html', 'r', encoding='utf-8') as f:
+    @route('/test/ui')
+    async def test_ui(self, request):
+        async with aiofiles.open('templates/test_ui.html', 'r', encoding='utf-8') as f:
             template = await f.read()
             return web.Response(text=template, content_type='text/html', charset='utf-8')
 
