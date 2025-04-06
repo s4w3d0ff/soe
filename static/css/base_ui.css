@@ -1,0 +1,185 @@
+@font-face {
+    font-family: 'Silkscreen';
+    src: url('/static/fonts/Silkscreen-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Silkscreen Bold';
+    src: url('/static/fonts/Silkscreen-Bold.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'BebasNeue';
+    src: url('/static/fonts/BebasNeue-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'AdvancedPixelLcd';
+    src: url('/static/fonts/AdvancedPixelLcd-Regular.ttf') format('truetype');
+}
+/* Customize scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 3px;               /* width of vertical scrollbar */
+    height: 3px;              /* height of horizontal scrollbar */
+}
+
+/* Track (background) of the scrollbar */
+::-webkit-scrollbar-track {
+    background: #2b2b2b;      /* dark background for track */
+}
+
+/* Handle (thumb) of the scrollbar */
+::-webkit-scrollbar-thumb {
+    background: #666;         /* darker grey for the handle */
+    border-radius: 4px;       /* rounded corners */
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #888;         /* slightly lighter on hover */
+}
+
+/* For Firefox */
+* {
+    scrollbar-width: thin;    /* "auto" or "thin" */
+    scrollbar-color: #666 #2b2b2b;  /* thumb and track color */
+}
+:root {
+    --bg-color: #1a1a1a;
+    --card-bg: #252525;
+    --text-color: #e0e0e0;
+    --accent-color: #209d9d;
+    --input-border-color: #2f7ef655;
+    --h2-bg-color: #03334a1f;
+    --h2-color: #cbd9d6;
+    --h2-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
+    --card-box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
+}
+
+body {
+    font-family: 'BebasNeue';
+    font-size: 0.75em;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 7px;
+    line-height: 1.2;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 9px;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: var(--card-box-shadow);
+    display: flex;
+    flex-direction: column;
+    align-content: revert-layer;
+    justify-content: space-between;
+}
+
+h1 {
+    text-align: center;
+    color: var(--accent-color);
+    font-size: 2em;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+h2 {
+    display: none;
+    text-align: left;
+    font-family: 'Silkscreen';
+    margin: -8px -8px 3px -8px;
+    color: var(--h2-color);
+    font-size: 1.2em;
+    background: var(--h2-bg-color);
+    padding: 1px 3px;
+    border-radius: 8px 8px 0 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    box-shadow: var(--h2-box-shadow);
+    word-break: break-word;
+}
+
+.control-group {
+    display: flex;
+    gap: 10px;
+    margin: 5px 0;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 1px;
+    margin:3px 3px;
+}
+
+label {
+    font-size: 1.2em;
+}
+
+input {
+    padding: 5px;
+    margin: 2px 0;
+    margin-left: 3px;
+    border: 1px solid var(--input-border-color);
+    background: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 4px;
+    width: 45%;
+    font-family: monospace,
+}
+
+button {
+    padding: 8px 12px;
+    font-family: 'Silkscreen';
+    background: #4881975c;
+    color: var(--text-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    box-shadow: var(--h2-box-shadow);
+    min-width: 69px;
+}
+
+button:hover {
+    opacity: 0.8;
+    background: var(--accent-color);
+}
+
+.status-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.success {
+    background: #2ecc7078;
+    color: var(--text-color);
+}
+
+.error {
+    background: #e74d3c83;
+    color: var(--text-color);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.section-divider {
+    border-top: 1px solid var(--input-border-color);
+    margin: 10px 0;
+}
