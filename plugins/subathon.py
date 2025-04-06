@@ -126,6 +126,7 @@ class Subathon:
             "t1": self.value_multipliers["t1"] * self.time_multiplier,
             "t2": self.value_multipliers["t2"] * self.time_multiplier,
             "t3": self.value_multipliers["t3"] * self.time_multiplier,
+            "raids": self.value_multipliers["raids"] * self.time_multiplier
         }
         # Save stats to JSON file every 15 seconds
         if self._json_file and time.time() - self._last_stat_check > 5:
@@ -189,7 +190,7 @@ class SubathonBot(TwitchBot):
 
     @route('/subathon/ui', method='GET')
     async def subathon_ui(self, request):
-        async with aiofiles.open('templates/subathonui.html', 'r', encoding='utf-8') as f:
+        async with aiofiles.open('templates/subathon_ui.html', 'r', encoding='utf-8') as f:
             template = await f.read()
             return web.Response(text=template, content_type='text/html', charset='utf-8')
         
