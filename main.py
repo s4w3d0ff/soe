@@ -104,15 +104,15 @@ class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, Comm
     
     @route('/matrix')
     async def matrix_route(self, request):
-        async with aiofiles.open('templates/matrix.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/matrix.html')
 
     @route('/queue/ui')
     async def queue_ui_route(self, request):
-        async with aiofiles.open('templates/queue_ui.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/queue_ui.html')
+
+    @route('/ads')
+    async def ads_route(self, request):
+        return await self.app.response_html('templates/ads.html')
 
     @command(name="cheers", aliases=["bits"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)
@@ -129,11 +129,6 @@ class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, Comm
         if len(out) > 0:
             await self.send_chat(out, channel["broadcaster_id"])
 
-    @route('/ads')
-    async def ads_route(self, request):
-        async with aiofiles.open('templates/ads.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
 
 if __name__ == '__main__':
     from plugins.alerts import alert_objs

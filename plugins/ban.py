@@ -16,7 +16,7 @@ class BannedBot(TwitchBot):
     @route("/alertended")
     def alertended(self, request):
         self.alertDone = True
-        return web.json_response({"status": True})
+        return self.app.response_json({"status": True})
 
     @route('/banned')
     async def banned(self, request):

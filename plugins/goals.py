@@ -2,9 +2,7 @@ import asyncio
 import os
 import json
 import time
-import aiofiles
 import logging
-from aiohttp import web
 from datetime import datetime, timedelta
 from poolguy.storage import aioLoadJSON
 from poolguy import TwitchBot, route, websocket
@@ -23,9 +21,7 @@ class GoalBot(TwitchBot):
 
     @route('/goals')
     async def goals(self, request):
-        async with aiofiles.open('templates/goals.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/goals.html')
     
     async def get_total_cheers(self, days_back=30, base_dir='db/alerts/channel.cheer'):
         current_date = datetime.now()
@@ -112,16 +108,13 @@ class GoalBot(TwitchBot):
     #=====================================================================
     @route('/alerts')
     async def alerts(self, request):
-        async with aiofiles.open('templates/alerts.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/alerts.html')
 
     @websocket('/alertsws')
     async def alertsws(self, ws, request):
         while not self.http.user_id:
             logger.error(f"alertsws error: not logged in yet")
             await asyncio.sleep(10)
-        # Keep connection alive and wait for updates
         logger.warning(f"Websocket connected: alertsws")
         while not ws.closed:
             try:
@@ -129,13 +122,9 @@ class GoalBot(TwitchBot):
                 await ws.send_json(update)
                 self.alertws_queue.task_done()
             except asyncio.TimeoutError:
-                # Send a ping to keep connection alive
                 await ws.ping()
                 continue
             except Exception as e:
                 logger.error(f"Unexpected error in alertsws loop: {e}")
                 break
-        # Clean up
-        if not ws.closed:
-            await ws.close()
         logger.warning("alertsws connection closed")

@@ -364,7 +364,7 @@ class ChannelRaid(Alert):
         views = self.data['viewers']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
-               self.bot.subathon.add_time(int(views), 'raid')
+               self.bot.subathon.add_time(int(views), 'raids')
         if hasattr(self.bot, 'ai'):
             r = self.bot.ai.ask(f'{raidFrom} is raiding {raidTo} with {views} viewers!, please inform chat.')
         else:

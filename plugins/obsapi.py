@@ -1,7 +1,6 @@
 import logging
 import asyncio
 import simpleobsws
-from aiohttp import web
 from poolguy import TwitchBot, route
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,8 @@ class OBSController:
                 await self.ws.wait_until_identified()
                 self._connected = True
             except Exception as e:
-                logger.error(f"Failed to connect to OBS: {e}")
+                logger.debug(f'{e}')
+                logger.error(f"Waiting for OBS websocket connection...")
                 await asyncio.sleep(15)
         logger.warning(f"Connected to obs!")
         out = {}
@@ -194,4 +194,4 @@ class OBSBot(TwitchBot):
     @route("/obs/clearwait", method="GET")
     async def obs_clear_wait(self, request):
         await self.obsws.clear_wait()
-        return web.Response(text="Wait cleared.")
+        return self.app.response_json({"status": True})
