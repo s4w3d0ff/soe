@@ -1,9 +1,7 @@
-import aiofiles
 import time
 import logging
 import asyncio
 import os
-from aiohttp import web
 from typing import Callable, Dict, Optional
 from poolguy import TwitchBot, route, command, rate_limit
 from poolguy.storage import loadJSON, saveJSON
@@ -190,45 +188,41 @@ class SubathonBot(TwitchBot):
 
     @route('/subathon/ui', method='GET')
     async def subathon_ui(self, request):
-        async with aiofiles.open('templates/subathon_ui.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/subathon_ui.html')
         
     @route('/subathon/timer', method='GET')
     async def subathon_timer(self, request):
-        async with aiofiles.open('templates/subathontimer.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/subathontimer.html')
 
     @route('/subathon/pause', method='GET')
     async def subathon_pause(self, request):
         self.subathon.pause()
-        return web.json_response({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
     
     @route('/subathon/resume', method='GET')
     async def subathon_resume(self, request):
         self.subathon.resume()
-        return web.json_response({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
     
     @route('/subathon/stats', method='GET')
     async def subathon_stats(self, request):
-        return web.json_response({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
 
     @route('/subathon/addtime', method='POST')
     async def subathon_addtime(self, request):
         data = await request.json()
         if "amount" not in data:
-            return web.json_response({"status": False, "data": data})
+            return self.app.response_json({"status": False, "data": data})
         self.subathon.add_time(amount=data["amount"], multiplier=data.get("multiplier", None))
-        return web.json_response({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
 
     @route('/subathon/removetime', method='POST')
     async def subathon_removetime(self, request):
         data = await request.json()
         if "amount" not in data:
-            return web.json_response({"status": False, "data": data})
+            return self.app.response_json({"status": False, "data": data})
         self.subathon.remove_time(amount=data["amount"], multiplier=data.get("multiplier", None))
-        return web.json_response({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
 
     @route('/subathon/new/{init_time}', method='POST')
     async def subathon_new(self, request):
@@ -242,7 +236,7 @@ class SubathonBot(TwitchBot):
         self.subathon.shutdown()
         self.subathon = Subathon(**cfg)
         self.subathon.start()
-        return web.json_response({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
 
     @command(name="subathon", aliases=["streamathon"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)

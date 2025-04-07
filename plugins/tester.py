@@ -1,9 +1,7 @@
-import aiofiles
 import logging
 import random
 import string
 from datetime import datetime, timedelta, timezone
-from aiohttp import web
 from poolguy import TwitchBot, route
 
 logger = logging.getLogger(__name__)
@@ -319,9 +317,7 @@ def test_meta_data():
 class TesterBot(TwitchBot):
     @route('/test/ui')
     async def test_ui(self, request):
-        async with aiofiles.open('templates/test_ui.html', 'r', encoding='utf-8') as f:
-            template = await f.read()
-            return web.Response(text=template, content_type='text/html', charset='utf-8')
+        return await self.app.response_html('templates/test_ui.html')
 
     @route('/test/{cmd}/', method='POST')
     async def test(self, request):
@@ -381,4 +377,4 @@ class TesterBot(TwitchBot):
         await self.ws.handle_message(
             {"metadata": test_meta_data(), "payload": payload}
         )
-        return web.json_response({"status": True})
+        return self.app.response_json({"status": True})
