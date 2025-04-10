@@ -6,7 +6,7 @@ function showStatus(message, type) {
 
     setTimeout(() => {
         statusElement.style.display = 'none';
-    }, 5000);
+    }, 2000);
 }
 
 class QueueManager {
@@ -18,7 +18,7 @@ class QueueManager {
     initialize() {
         this.refreshQueueItems();
         // Refresh queue every 1 second
-        setInterval(() => this.refreshQueueItems(), 1000);
+        setInterval(() => this.refreshQueueItems(), 3000);
     }
 
     async refreshQueueItems() {
@@ -28,6 +28,7 @@ class QueueManager {
             
             if (data.status) {
                 this.displayQueueItems(data.data);
+                this.displayPausedStatus(data.paused);
             } else {
                 console.error('Failed to fetch queue items');
             }
@@ -87,11 +88,18 @@ class QueueManager {
         return new Date(timestamp * 1000).toLocaleString();
     }
 
+    displayPausedStatus(status) {
+        if (status) {
+            showStatus('Queue is paused', 'error');
+        } else {
+            console.log('Queue is not paused');
+        }
+    }
     displayQueueItems(items) {
         this.queueContainer.innerHTML = '';
         
         if (items.length === 0) {
-            this.queueContainer.innerHTML = '<div class="queue-item">No items in queue</div>';
+            this.queueContainer.innerHTML = '<div class="queue-item" style="text-align: center; font-size: 1.5em;">Queue is empty</div>';
             return;
         }
 

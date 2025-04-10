@@ -12,6 +12,7 @@ function showStatus(message, type) {
 class SubathonController {
     constructor() {
         this.apiBaseUrl = '/subathon';
+        this.previousStats = null;
         this.initializeEventListeners();
         this.startPeriodicUpdates();
     }
@@ -46,23 +47,46 @@ class SubathonController {
             return null;
         }
     }
-
     updateStats(stats) {
-        const statsDisplay = document.getElementById('statsDisplay');
-        statsDisplay.innerHTML = '';
-        for (const [key, value] of Object.entries(stats)) {
-            if (key === "remaining") continue;  // Skip the remaining time field
-            const labelElement = document.createElement('div');
-            labelElement.className = 'stat-label';
-            // Capitalize the first letter of the key and replace underscores with spaces
-            const formattedKey = key.charAt(0).toUpperCase() + 
-                                key.slice(1).replace(/_/g, ' ');
-            labelElement.innerHTML = `${formattedKey}: <span>${value}</span>`;
-            statsDisplay.appendChild(labelElement);
-        }
-        // Extract and display the remaining time
+        // Always update the remaining time
         const remainingTime = Math.round(stats.remaining);  // Round to the nearest integer
         document.getElementById('timeRemaining').textContent = this.formatTime(remainingTime);
+        
+        // Create a copy of stats without the 'remaining' field for comparison
+        const statsForComparison = { ...stats };
+        delete statsForComparison.remaining;
+        
+        // If we haven't stored previous stats or if the stats have changed
+        if (!this.previousStats || !this.areStatsEqual(this.previousStats, statsForComparison)) {
+            const statsDisplay = document.getElementById('statsDisplay');
+            statsDisplay.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(stats)) {
+                if (key === "remaining") continue;  // Skip the remaining time field
+                
+                const labelElement = document.createElement('div');
+                labelElement.className = 'stat-label';
+                // Capitalize the first letter of the key and replace underscores with spaces
+                const formattedKey = key.charAt(0).toUpperCase() + 
+                                    key.slice(1).replace(/_/g, ' ');
+                labelElement.innerHTML = `${formattedKey}: <span>${value}</span>`;
+                statsDisplay.appendChild(labelElement);
+            }
+            
+            // Update the stored previous stats
+            this.previousStats = statsForComparison;
+        }
+    }
+    
+    areStatsEqual(stats1, stats2) {
+        const keys1 = Object.keys(stats1);
+        const keys2 = Object.keys(stats2);
+        
+        if (keys1.length !== keys2.length) return false;
+        
+        return keys1.every(key => {
+            return stats1[key] === stats2[key];
+        });
     }
 
     formatTime(seconds) {
@@ -154,6 +178,6 @@ class SubathonController {
             } catch (error) {
                 console.error('Stats update error:', error);
             }
-        }, 1000);
+        }, 2000);
     }
 }

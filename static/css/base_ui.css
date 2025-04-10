@@ -14,7 +14,7 @@
     font-family: 'AdvancedPixelLcd';
     src: url('/static/fonts/AdvancedPixelLcd-Regular.ttf') format('truetype');
 }
-/* Customize scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+
 ::-webkit-scrollbar {
     width: 3px;               /* width of vertical scrollbar */
     height: 3px;              /* height of horizontal scrollbar */
@@ -22,18 +22,18 @@
 
 /* Track (background) of the scrollbar */
 ::-webkit-scrollbar-track {
-    background: #2b2b2b;      /* dark background for track */
+    background: #2b2b2b;    /* dark background for track */
 }
 
 /* Handle (thumb) of the scrollbar */
 ::-webkit-scrollbar-thumb {
-    background: #666;         /* darker grey for the handle */
+    background: #666;       /* darker grey for the handle */
     border-radius: 4px;       /* rounded corners */
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-    background: #888;         /* slightly lighter on hover */
+    background: #888;       /* slightly lighter on hover */
 }
 
 /* For Firefox */
@@ -41,16 +41,18 @@
     scrollbar-width: thin;    /* "auto" or "thin" */
     scrollbar-color: #666 #2b2b2b;  /* thumb and track color */
 }
+
 :root {
     --bg-color: #1a1a1a;
     --card-bg: #252525;
-    --text-color: #e0e0e0;
-    --accent-color: #209d9d;
-    --input-border-color: #2f7ef655;
+    --text-color: #a0d3e8;
+    --accent-color: #569497;
+    --input-border-color: #5f757d;
     --h2-bg-color: #03334a1f;
     --h2-color: #cbd9d6;
-    --h2-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
-    --card-box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
+    --button-box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.6);
+    --button-hover-box-shadow: -1px -2px 2px rgba(0, 0, 0, 0.3);
+    --card-box-shadow: 0px 3px 8px rgba(0,0,0,0.2);
 }
 
 body {
@@ -91,14 +93,13 @@ h1 {
 }
 
 h2 {
-    display: none;
-    text-align: left;
+    text-align: center;
     font-family: 'Silkscreen';
     margin: -8px -8px 3px -8px;
     color: var(--h2-color);
-    font-size: 1.2em;
+    font-size: 1.1em;
     background: var(--h2-bg-color);
-    padding: 1px 3px;
+    padding: 2px 3px;
     border-radius: 8px 8px 0 0;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     box-shadow: var(--h2-box-shadow);
@@ -117,68 +118,102 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: space-evenly;
-    gap: 1px;
-    margin:3px 3px;
+    gap: 9px;
+    padding: 0px 20px;
+    margin: 2px auto;
+}
+.notice-fields {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+}
+
+.notice-fields {
+    display: none;
+    margin: 10px 0;
+}
+
+select {
+    padding: 5px;
+    margin: 5px;
+    border-radius: 4px;
+    border: 1px solid #2420ff;
 }
 
 label {
     font-size: 1.2em;
+    font-family: "Consolas";
+    font-weight: bold;
+    text-align: center;
 }
 
 input {
-    padding: 5px;
-    margin: 2px 0;
+    padding: 3px 1px;
     margin-left: 3px;
     border: 1px solid var(--input-border-color);
     background: var(--bg-color);
     color: var(--text-color);
     border-radius: 4px;
-    width: 45%;
-    font-family: monospace,
+    width: 100%;
+    min-width: 25px;
+    font-family: 'Consolas', monospace;
+}
+
+input[type="color"] {
+    padding: 0;
+    width: 12px;
+    height: 22px;
+    margin: 5px;
+    border-radius: 12px;
 }
 
 button {
-    padding: 8px 12px;
+    padding: 5px 3px;
     font-family: 'Silkscreen';
     background: #4881975c;
     color: var(--text-color);
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9em;
-    box-shadow: var(--h2-box-shadow);
-    min-width: 69px;
+    font-size: 1.1em;
+    box-shadow: var(--button-box-shadow);
+    min-width: 25%;
 }
 
 button:hover {
     opacity: 0.8;
-    background: var(--accent-color);
+    box-shadow: var(--button-hover-box-shadow);
+    transition: background 0.3s, box-shadow 0.3s;
 }
 
 .status-message {
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     padding: 10px 20px;
     border-radius: 4px;
+    font-family: 'Consolas';
     display: none;
     animation: fadeIn 0.3s ease-in;
 }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
 
 .success {
-    background: #2ecc7078;
+    background: #2ecc703e;
     color: var(--text-color);
 }
 
 .error {
-    background: #e74d3c83;
+    background: #e74d3c22;
     color: var(--text-color);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+
+
 .section-divider {
     border-top: 1px solid var(--input-border-color);
     margin: 10px 0;
