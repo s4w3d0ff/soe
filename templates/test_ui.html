@@ -4,109 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SOE UI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="/static/css/base_ui.css">
     <script src="/static/js/test_ui.js"></script>
 </head>
 <body>
     <div class="container">
-        <!-- Bits Section -->
         <div class="card">
+            <h2>channel.chat.notification</h2>
+            <div class="input-group">
+                <label>Type:</label>
+                <select id="noticeType">
+                    <option value="sub">Subscription</option>
+                    <option value="resub">Resub</option>
+                    <option value="sub_gift">Sub Gift</option>
+                    <option value="community_sub_gift">Community Sub Gift</option>
+                    <option value="gift_paid_upgrade">Gift Paid Upgrade</option>
+                    <option value="prime_paid_upgrade">Prime Paid Upgrade</option>
+                    <option value="raid">Raid</option>
+                    <option value="unraid">Unraid</option>
+                    <option value="pay_it_forward">Pay It Forward</option>
+                    <option value="announcement">Announcement</option>
+                    <option value="bits_badge_tier">Bits Badge Tier</option>
+                    <option value="charity_donation">Charity Donation</option>
+                </select>
+            </div>
+            <!-- Base Fields -->
+            <div class="input-group">
+                <label>User Name:</label>
+                <input type="text" id="chatUserName" value="cool_user">
+                <label>Message:</label>
+                <input type="text" id="userMessage" value="user_message">                
+            </div>
+            <div class="input-group">
+                <input type="color" id="chatColor" value="#555555">
+                <label>System Message:</label>
+                <input type="text" id="systemMessage" value="system_message">
+            </div>
+            <!-- Dynamic Fields Container -->
+            <div id="dynamicFields"></div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.chat.notification')">Send Notification</button>
+            </div>
+        </div>
+        <div class="card">
+            <!-- Bits Section -->
             <h2>channel.cheer / channel.bits.use</h2>
             <div class="input-group">
-                <label>Bits:</label>
-                <input type="number" id="bitsAmount" value="100">
-            </div>
-            <div class="input-group">
-                <label>Anonymous:</label>
+                <input type="number" id="bitsAmount" value="69">
+                <label>Bits</label>
                 <input type="checkbox" id="bitsAnon">
+                <label>Anon</label>
             </div>
             <div class="control-group">
-                <button onclick="testEvent('channel.cheer')">Test Cheer</button>
-                <button onclick="testEvent('channel.bits.use')">Test Bits Use</button>
+                <button onclick="testEvent('channel.cheer')">channel.cheer</button>
+                <button onclick="testEvent('channel.bits.use')">channel.bits.use</button>
             </div>
         </div>
-
-        <!-- Raid Section -->
         <div class="card">
-            <h2>channel.raid</h2>
-            <div class="input-group">
-                <label>Viewers:</label>
-                <input type="number" id="viewerAmount" value="100">
-            </div>
-            <div class="input-group">
-                <label>From:</label>
-                <input type="text" id="raidFrom" value="Cool_User" style="width: 120px;">
-            </div>
-            <div class="control-group">
-                <button onclick="testEvent('channel.raid')">Test Raid</button>
-            </div>
-        </div>
-
-        <!-- Subscribe Section -->
-        <div class="card">
-            <h2>channel.subscribe</h2>
-            <div class="input-group">
-                <label>Tier:</label>
-                <input type="number" id="subTier" value="1" min="1" max="3">
-            </div>
-            <div class="input-group">
-                <label>Gifted:</label>
-                <input type="checkbox" id="subGifted">
-            </div>
-            <div class="control-group">
-                <button onclick="testEvent('channel.subscribe')">Test Sub</button>
-            </div>
-        </div>
-
-        <!-- Sub Gift Section -->
-        <div class="card">
-            <h2>channel.subscription.gift</h2>
-            <div class="input-group">
-                <label>Total:</label>
-                <input type="number" id="giftTotal" value="1">
-            </div>
-            <div class="input-group">
-                <label>Tier:</label>
-                <input type="number" id="giftTier" value="1" min="1" max="3">
-            </div>
-            <div class="input-group">
-                <label>Anonymous:</label>
-                <input type="checkbox" id="giftAnon">
-            </div>
-            <div class="control-group">
-                <button onclick="testEvent('channel.subscription.gift')">Test Gift</button>
-            </div>
-        </div>
-
-        <!-- Resub Message Section -->
-        <div class="card">
-            <h2>channel.subscription.message</h2>
-            <div class="input-group">
-                <label>Tier:</label>
-                <input type="number" id="resubTier" value="1" min="1" max="3">
-            </div>
-            <div class="input-group">
-                <label>Months:</label>
-                <input type="number" id="resubMonths" value="3">
-            </div>
-            <div class="input-group">
-                <label>Streak:</label>
-                <input type="number" id="resubStreak" value="3">
-            </div>
-            <div class="input-group">
-                <label>Message:</label>
-                <input type="text" id="resubMsg" value="Thank you!" style="width: 120px;">
-            </div>
-            <div class="control-group">
-                <button onclick="testEvent('channel.subscription.message')">Test Resub</button>
-            </div>
-        </div>
-
-        <!-- Goal Progress Section -->
-        <div class="card">
+            <!-- Goal Progress Section -->
             <h2>channel.goal.progress</h2>
             <div class="input-group">
                 <label>Type:</label>
@@ -115,24 +70,19 @@
             <div class="input-group">
                 <label>Current:</label>
                 <input type="number" id="goalCurrent" value="50">
-            </div>
-            <div class="input-group">
                 <label>Target:</label>
                 <input type="number" id="goalTarget" value="100">
             </div>
             <div class="control-group">
-                <button onclick="testEvent('channel.goal.progress')">Test Goal</button>
+                <button onclick="testEvent('channel.goal.progress')">channel.goal.progress</button>
             </div>
         </div>
-
-        <!-- Hype Train Section -->
         <div class="card">
+            <!-- Hype Train Section -->
             <h2>channel.hype_train.progress / end</h2>
             <div class="input-group">
                 <label>Level:</label>
                 <input type="number" id="hypeLevel" value="1">
-            </div>
-            <div class="input-group">
                 <label>Total:</label>
                 <input type="number" id="hypeTotal" value="100">
             </div>
@@ -141,26 +91,20 @@
                 <input type="number" id="hypeProgress" value="50">
             </div>
             <div class="control-group">
-                <button onclick="testEvent('channel.hype_train.progress')">Test Progress</button>
-                <button onclick="testEvent('channel.hype_train.end')">Test End</button>
+                <button onclick="testEvent('channel.hype_train.progress')">channel.hype_train.progress</button>
+                <button onclick="testEvent('channel.hype_train.end')">channel.hype_train.end</button>
             </div>
         </div>
-
-        <!-- Other Events Section -->
         <div class="card">
-            <h2>channel.chat.notification / channel.follow</h2>
-            <div class="input-group">
-                <label>Message:</label>
-                <input type="text" id="notificationMsg" value="Test notification" style="width: 120px;">
-            </div>
+            <!-- Follow Section -->
+            <h2>channel.follow</h2>
             <div class="input-group">
                 <label>Username:</label>
-                <input type="text" id="followUsername" value="cool_user" style="width: 120px;">
+                <input type="text" id="followUsername" value="cool_user">
             </div>
             <div class="control-group">
-                <button onclick="testEvent('channel.chat.notification')">Test Notification</button>
-                <button onclick="testEvent('channel.follow')">Test Follow</button>
-            </div>
+                <button onclick="testEvent('channel.follow')">channel.follow</button>
+            </div>  
         </div>
     </div>
     <div id="statusMessage" class="status-message"></div>

@@ -31,12 +31,8 @@
 			"channel.ban": null,
 			"channel.follow": null,
 			"channel.bits.use": null,
-			"channel.raid": null,
 			"channel.chat.notification": null,
 			"channel.chat.message": null,
-			"channel.subscribe": null,
-			"channel.subscription.gift": null,
-			"channel.subscription.message": null,
 			"channel.goal.progress": null,
 			"channel.hype_train.progress": null,
 			"channel.hype_train.end": null
@@ -78,6 +74,5 @@
         }
     },
 	"max_retries": 60,
-	"retry_delay": 10,
-	"tags": ["420", "Veteran", "Autistic"]
+	"retry_delay": 10
 }

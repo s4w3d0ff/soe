@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 #==========================================================================================
 # MainBot =================================================================================
 #==========================================================================================
-class MyBot(OBSBot, SubathonBot, GoalBot, BannedBot, SpotifyBot, TarkovBot, CommandBot, TesterBot, UIBot):
+class MyBot(
+        OBSBot, SubathonBot, GoalBot, BannedBot, 
+        SpotifyBot, TarkovBot, CommandBot, TesterBot, UIBot
+        ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
         client_id = os.getenv("SOE_CLIENT_ID")

@@ -245,35 +245,64 @@ test_payloads = {
             "chatter_is_anonymous": False,
             "color": "",
             "badges": [],
-            "system_message": "viewer23 subscribed at Tier 1. They've subscribed for 10 months!",
+            "system_message": "sys_msg",
             "message_id": "test_"+randString(),
             "message": {
                 "text": "",
                 "fragments": []
             },
-            "notice_type": "resub",
-            "sub": None,
+            "notice_type": "<string>",
+            "sub": {
+                "sub_tier": "1000",
+                "is_prime": False,
+                "duration_months": 1
+            },
             "resub": {
                 "cumulative_months": 10,
-                "duration_months": 0,
+                "duration_months": 1,
                 "streak_months": None,
-                "sub_plan": "1000",
+                "sub_tier": "1000",
+                "is_prime": False,
                 "is_gift": False,
                 "gifter_is_anonymous": None,
-                "gifter_user_id": None,
-                "gifter_user_name": None,
-                "gifter_user_login": None
+                "gifter_user_name": None
             },
-            "sub_gift": None,
-            "community_sub_gift": None,
-            "gift_paid_upgrade": None,
-            "prime_paid_upgrade": None,
-            "pay_it_forward": None,
-            "raid": None,
-            "unraid": None,
-            "announcement": None,
-            "bits_badge_tier": None,
-            "charity_donation": None,
+            "sub_gift": {
+                "duration_months": 1,
+                "cumulative_months": 10,
+                "sub_tier": "1000",
+                "recipient_user_name": "<string>"
+            },
+            "community_sub_gift": {
+                "sub_tier": "1000",
+                "total": 5
+            },
+            "gift_paid_upgrade": {
+                "gifter_is_anonymous": None,
+                "gifter_user_name": "<string>"
+            },
+            "prime_paid_upgrade": {
+                "sub_tier": "1000"
+            },
+            "pay_it_forward": {
+                "gifter_is_anonymous": None,
+                "gifter_user_name": "<string>"
+            },
+            "raid": {
+                "viewer_count": 100,
+                "user_name": "<string>"
+            },
+            "unraid": {},
+            "announcement": {
+                "color": "#0000FF"
+            },
+            "bits_badge_tier": {
+                "tier": 1000
+            },
+            "charity_donation": {
+                "charity_name": "Charity Name",
+                "amount": 10.0
+            },
             "shared_chat_sub": None,
             "shared_chat_resub": None,
             "shared_chat_sub_gift": None,
@@ -328,7 +357,7 @@ class TesterBot(TwitchBot):
         match cmd:
             case "channel.raid":
                 payload = test_payloads["channel.raid"]
-                payload["event"]["viewers"] = int(args.get("viewers", 1))
+                payload["event"]["viewer_count"] = int(args.get("viewer_count", 1))
                 payload["event"]["from_broadcaster_user_name"] = args.get("from", "Cool_User")
             case "channel.cheer":
                 payload = test_payloads["channel.cheer"]
@@ -366,12 +395,82 @@ class TesterBot(TwitchBot):
                 payload = test_payloads["channel.hype_train.end"]
                 payload["event"]["level"] = int(args.get("level", 1))
                 payload["event"]["total"] = int(args.get("total", 100))
-            case "channel.chat.notification":
-                payload = test_payloads["channel.chat.notification"]
-                payload["event"]["system_message"] = args.get("system_message", "")
             case "channel.follow":
                 payload = test_payloads["channel.follow"]
                 payload["event"]["user_name"] = args.get("user_name", "cool_user")
+            case "channel.chat.notification":
+                payload = test_payloads["channel.chat.notification"]
+                notice_type = args.get("notice_type", "")
+                payload["event"]["notice_type"] = notice_type
+                payload["event"]["system_message"] = args.get("system_message", "system_message")
+                payload["event"]["message"]["text"] = args.get("message", "")
+                payload["event"]["user_name"] = args.get("user_name", "cool_user")
+                payload["event"]["color"] = args.get("color", "#555555")
+                match notice_type:
+                    case "sub":
+                        payload["event"]["sub"] = {
+                            "sub_tier": args.get("sub_tier", "1000"),
+                            "is_prime": args.get("is_prime", False),
+                            "duration_months": int(args.get("duration_months", 1))
+                        }
+                    case "resub":
+                        payload["event"]["resub"] = {
+                            "cumulative_months": int(args.get("cumulative_months", 10)),
+                            "duration_months": int(args.get("duration_months", 1)),
+                            "streak_months": args.get("streak_months", None),
+                            "sub_tier": args.get("sub_tier", "1000"),
+                            "is_prime": args.get("is_prime", False),
+                            "is_gift": args.get("is_gift", False),
+                            "gifter_is_anonymous": args.get("gifter_is_anonymous", None),
+                            "gifter_user_name": args.get("gifter_user_name", None)
+                        }
+                    case "sub_gift":
+                        payload["event"]["sub_gift"] = {
+                            "duration_months": int(args.get("duration_months", 1)),
+                            "cumulative_months": int(args.get("cumulative_months", 10)),
+                            "sub_tier": args.get("sub_tier", "1000"),
+                            "recipient_user_name": args.get("recipient_user_name", "<string>")
+                        }
+                    case "community_sub_gift":
+                        payload["event"]["community_sub_gift"] = {
+                            "sub_tier": args.get("sub_tier", "1000"),
+                            "total": int(args.get("total", 5))
+                        }
+                    case "gift_paid_upgrade":
+                        payload["event"]["gift_paid_upgrade"] = {
+                            "gifter_is_anonymous": args.get("gifter_is_anonymous", None),
+                            "gifter_user_name": args.get("gifter_user_name", "<string>")
+                        }
+                    case "prime_paid_upgrade":
+                        payload["event"]["prime_paid_upgrade"] = {
+                            "sub_tier": args.get("sub_tier", "1000")
+                        }
+                    case "raid":
+                        payload["event"]["raid"] = {
+                            "viewer_count": int(args.get("viewer_count", 100)),
+                            "profile_image_url": args.get("profile_image_url", "<string>"),
+                            "user_name": args.get("user_name", "<string>")
+                        }
+                    case "unraid":
+                        payload["event"]["unraid"] = {}
+                    case "pay_it_forward":
+                        payload["event"]["pay_it_forward"] = {
+                            "gifter_is_anonymous": args.get("gifter_is_anonymous", None),
+                            "gifter_user_name": args.get("gifter_user_name", "<string>")
+                        }
+                    case "announcement":
+                        payload["event"]["announcement"] = {
+                            "color": args.get("color", "#0000FF")
+                        }
+                    case "bits_badge_tier":
+                        payload["event"]["bits_badge_tier"] = {
+                            "tier": int(args.get("tier", 1000))
+                        }
+                    case "charity_donation":
+                        payload["event"]["charity_donation"] = {
+                            "charity_name": args.get("charity_name", "Charity Name"),
+                            "amount": float(args.get("amount", 10.0))
+                        }
             case _:
                 raise ValueError(f"Unknown event type: {cmd}")
         await self.ws.handle_message(
