@@ -137,7 +137,6 @@ async function testEvent(eventType) {
         case 'channel.cheer':
         case 'channel.bits.use':
             data.bits = document.getElementById('bitsAmount').value;
-            data.anon = document.getElementById('bitsAnon').checked;
             break;
         case 'channel.goal.progress':
             data.type = document.getElementById('goalType').value;
