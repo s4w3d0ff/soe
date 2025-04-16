@@ -29,7 +29,8 @@ class MyBot(
         obsws_password = os.getenv("OBSWS_PASSWORD")
         if not client_id or not client_secret or not spotify_client_id or not spotify_client_secret:
             raise ValueError(f"Environment variables are required: {[
-                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 'SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'OBSWS_PASSWORD'
+                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 
+                'SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'OBSWS_PASSWORD'
                 ]}")
         kwargs['twitch_config']['client_id'] = client_id
         kwargs['twitch_config']['client_secret'] = client_secret
@@ -50,13 +51,9 @@ class MyBot(
         await self.refresh_obs_scenes()
 
     async def refresh_obs_scenes(self):
-        await self.obsws.hide_source(source_name="Matrix Rain", scene_name="[S] Backgrounds")
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
-        await self.obsws.hide_source(source_name="Alerts [SOE]", scene_name="Starting-scene")
         await asyncio.sleep(2)
-        await self.obsws.show_source(source_name="Matrix Rain", scene_name="[S] Backgrounds")
         await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
-        await self.obsws.show_source(source_name="Alerts [SOE]", scene_name="Starting-scene")
 
     async def shutdown(self, reset=True):
         """Gracefully shutdown the bot"""
@@ -104,10 +101,6 @@ class MyBot(
             template = await f.read()
             rendered = template.replace("{{ credits }}", credits)
             return web.Response(text=rendered, content_type='text/html', charset='utf-8')
-    
-    @route('/matrix')
-    async def matrix_route(self, request):
-        return await self.app.response_html('templates/matrix.html')
 
     @route('/queue/ui')
     async def queue_ui_route(self, request):
@@ -148,4 +141,4 @@ if __name__ == '__main__':
     cfg['alert_objs'] = alert_objs
     cfg['twitch_config']['base_dir'] = os.path.dirname(os.path.abspath(__file__))
     bot = MyBot(**cfg)
-    asyncio.run(bot.start())
+    asyncio.run(bot.start(paused=True))

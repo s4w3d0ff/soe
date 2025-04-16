@@ -1,102 +1,122 @@
 {
 	"25": {
 		"source": "fart",
+		"name": "fart",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"50": {
 		"source": "Coffee",
+		"name": "coffee",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"69": {
 		"source": "Fire n ur Butt",
+		"name": "fiery butthole",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"100": {
 		"source": "angry ticks",
+		"name": "nipple ticks",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"110": {
 		"source": "Eat Poop",
+		"name": "eat poop",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"120": {
 		"source": "wee wee",
+		"name": "wee wee boing",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"123": {
 		"source": "massage",
+		"name": "massage to the world (TTS)",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"145": {
 		"source": "45lbs Flip",
+		"name": "back flip",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"200": {
 		"source": "danksandboarding",
+		"name": "sandboarding",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"225": {
 		"source": "Delayed",
+		"name": "gandalf is late",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"230": {
 		"source": "Run Away",
+		"name": "im leaving",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"235": {
 		"source": "PPAP-short",
+		"name": "PPAP (short)",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"240": {
 		"source": "Crybaby",
+		"name": "crying is for babies",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"245": {
 		"source": "lost 100 followers",
+		"name": "rip 100 followers",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"275": {
 		"source": "house tour",
+		"name": "house tour",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"300": {
 		"source": "anusisbleeding",
+		"name": "bleeding anus",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"315": {
-		"source": "gimmie",
+		"source": "MICLIC",
+		"name": "MICLIC",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"320": {
 		"source": "egg",
+		"name": "honor jesus",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"325": {
 		"source": "master of cabbage",
+		"name": "master of cabbage",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"420": {
 		"source": "howareyou",
+		"name": "how are we feeling?",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"430": {
 		"source": "conform",
+		"name": "have a drink",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"450": {
 		"source": "PPAP",
+		"name": "PPAP (long)",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"500": {
 		"source": "moneyprinter",
+		"name": "money printer goes brrr",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"999": {
 		"source": "donut",
-		"text": "{user} dropped {amount} bits!"
-	},
-	"5000": {
-		"source": "MICLIC",
+		"name": "donut.exe",
 		"text": "{user} dropped {amount} bits!"
 	}
 }

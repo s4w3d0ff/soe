@@ -106,39 +106,61 @@ class QueueManager {
         items.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = 'queue-item';
-            
+        
             const priorityLabel = document.createElement('span');
             priorityLabel.className = `queue-item-priority priority-${item.priority}`;
             priorityLabel.textContent = `P${item.priority}`;
-
+        
+            let channelContent;
+            let dataContent;
+            switch (item.channel) {
+                case "channel.chat.notification":
+                    channelContent = item.data.notice_type;
+                    dataContent = Object.entries(item.data[item.data.notice_type])
+                        .map(([key, value]) => `<div><strong>${key}:</strong> ${value}</div>`)
+                        .join('');
+                    break;
+                case "channel.bits.use":
+                    channelContent = item.data.type;
+                    dataContent = `
+                        <div><strong>Amount:</strong> ${item.data.bits}</div>
+                        <div><strong>Message:</strong> ${item.data.message.text}</div>
+                        `;
+                    break;
+                case "channel.channel_points_custom_reward_redemption.add":
+                    channelContent = item.data.reward.title;
+                    dataContent = `
+                        <div><strong>Amount:</strong> ${item.data.reward.cost}</div>
+                        <div><strong>Message:</strong> ${item.data.reward.prompt}</div>
+                        `;
+                    break;
+                case "channel.follow":
+                    channelContent = "follow";
+                    dataContent = ` `;
+                    break;
+                default:
+                    channelContent = item.channel;
+                    dataContent = ` `;
+            }
+        
             const itemContent = `
                 <div class="queue-item-header">
                     ${priorityLabel.outerHTML}
-                    <span class="q-item-channel">${item.channel}</span>
-                    <span class="queue-item-username">${item.user_name}</span>
+                    <span class="q-item-channel">${channelContent}</span>
+                    <span class="queue-item-username">${item.data.user_name}</span>
                 </div>
                 <div class="queue-item-info">
                     <span class="timestamp">${this.formatTimestamp(item.timestamp)}</span>
                 </div>
                 <div class="queue-item-actions">
-                    <div class="data-content">
-                        ${this.formatData(item.data)}
-                    </div>
+                    <div class="data-content">${dataContent}</div>
                     <button onclick="queueManager.removeItem('${item.item_id}')">Remove</button>
                 </div>
             `;
-
+        
             itemElement.innerHTML = itemContent;
             this.queueContainer.appendChild(itemElement);
         });
-    }
-
-    formatData(data) {
-        // Format the data object for display
-        // Customize this based on your data structure
-        return Object.entries(data)
-            .map(([key, value]) => `<div><strong>${key}:</strong> ${value}</div>`)
-            .join('');
     }
 }
 

@@ -18,7 +18,7 @@ class VideoRedeem(Alert):
     priority = 3
     store = False
 
-    @duck_volume(volume=69)
+    @duck_volume(volume=40)
     async def process(self):
         rewardConf = points_cfg[self.data["reward"]["id"]]
         await self.bot.obsws.show_and_wait(rewardConf['source'], rewardConf['scene'])
@@ -70,7 +70,7 @@ class ChannelChannelPointsCustomRewardRedemptionAdd(Alert):
         rewardConf = points_cfg[rewardId]
         if 'name' not in rewardConf:
             alert = VideoRedeem(self.bot, self.message_id, self.channel, self.data, self.timestamp)
-            await self.bot.ws.notification_handler._queue.put((alert.priority, alert))
+            await self.bot.ws.notification_handler._queue.put(alert)
             return
         match rewardConf['name']:
             # Ban_______________
@@ -91,7 +91,7 @@ class ChannelChannelPointsCustomRewardRedemptionAdd(Alert):
              # Clowncore____________
             case "clowncore":
                 alert = ClownCoreRedeem(self.bot, self.message_id, self.channel, self.data, self.timestamp)
-                await self.bot.ws.notification_handler._queue.put((alert.priority, alert))
+                await self.bot.ws.notification_handler._queue.put(alert)
              # TWSS____________
             case "TWSS":
                 await self.bot.obsws.show_source(f'TWSS{random.randint(1, 21)}', '[S] TWSS')

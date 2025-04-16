@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 #################################=========---------
 ### channel.chat.notification ###=============---------
 #################################=================---------
-
 class SubNoto(Alert):
     queue_skip = False
     priority = 1
@@ -23,7 +22,7 @@ class SubNoto(Alert):
         self._text = "CheerText"
         self._source = "yaaay"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -57,7 +56,7 @@ class ResubNoto(Alert):
         self._sub_tts_path = "db/sub_tts.mp3"
         self._sub_tts_source = "sub_tts"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -98,7 +97,7 @@ class GiftsubNoto(Alert):
         self._text = "CheerText"
         self._source = "reallynice"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -135,7 +134,7 @@ class CommunitygiftsubNoto(Alert):
         self._text = "CheerText"
         self._source = "reallynice"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -169,7 +168,7 @@ class GiftpaidupgradeNoto(Alert):
         self._text = "CheerText"
         self._source = "yaaay"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -202,7 +201,7 @@ class PrimepaidupgradeNoto(Alert):
         self._text = "CheerText"
         self._source = "yaaay"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -235,7 +234,7 @@ class PayitforwardNoto(Alert):
         self._text = "CheerText"
         self._source = "yaaay"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -268,7 +267,7 @@ class RaidNoto(Alert):
         self._text = "CheerText"
         self._source = "hotfeet"
 
-    @duck_volume(volume=40)
+    @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
@@ -296,14 +295,15 @@ class RaidNoto(Alert):
 
 
 class ChannelChatNotification(Alert):
+    priority = 1
     queue_skip = True
     async def process(self):
         notice_type = self.data['notice_type']
         if notice_type.startswith('shared'):
             return
-        logger.info(f"eventsub.{self.channel}.{notice_type}.data: \n{json.dumps(self.data, indent=4)}")
+        logger.debug(f"eventsub.{self.channel}.{notice_type}.data: \n{json.dumps(self.data, indent=4)}")
         alert = None
-        args = [self.bot, self.message_id, self.channel, self.data, self.timestamp]
+        args = [self.bot, self.message_id, self.channel, self.data.copy(), self.timestamp]
         match notice_type:
             case "sub":
                 alert = SubNoto(*args)
@@ -332,4 +332,5 @@ class ChannelChatNotification(Alert):
             case _:
                 pass
         if alert:
-            await self.bot.ws.notification_handler._queue.put((alert.priority, alert))
+            await self.bot.ws.notification_handler._queue.put(alert)
+            alert = None

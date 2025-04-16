@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+	<meta charset="UTF-8">
     <style>
         body {
             margin: 0;
@@ -102,7 +103,7 @@
 		function drawMatrix() {
 			ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
-			ctx.font = `${params.fontSize}px monospace`;
+			ctx.font = `${params.fontSize}px sans-serif`;
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
 			const color = params.color;

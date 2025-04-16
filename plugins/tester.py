@@ -27,23 +27,6 @@ test_payloads = {
             "followed_at": datetime.now(timezone.utc).isoformat()
         }
     },
-    "channel.cheer": {
-        "subscription": {
-            "id": "test_"+randString(),
-            "type": "channel.cheer",
-        },
-        "event": {
-            "is_anonymous": False,
-            "user_id": "1234",
-            "user_login": "cool_user",
-            "user_name": "Cool_User",
-            "broadcaster_user_id": "1337",
-            "broadcaster_user_login": "cooler_user",
-            "broadcaster_user_name": "Cooler_User",
-            "message": "pogchamp woot woot awooga",
-            "bits": 1000
-        }
-    },
     "channel.bits.use": {
         "subscription": {
             "id": "test_"+randString(),
@@ -74,68 +57,6 @@ test_payloads = {
                     }
                 ]
             }
-        }
-    },
-    "channel.subscribe": {
-        "subscription": {
-            "id": "test_"+randString(),
-            "type": "channel.subscribe"
-        },
-        "event": {
-            "user_id": "1234",
-            "user_login": "cool_user",
-            "user_name": "Cool_User",
-            "broadcaster_user_id": "1337",
-            "broadcaster_user_login": "cooler_user",
-            "broadcaster_user_name": "Cooler_User",
-            "tier": "1000",
-            "is_gift": False
-        }
-    },
-    "channel.subscription.gift": {
-        "subscription": {
-            "id": "test_"+randString(),
-            "type": "channel.subscription.gift"
-        },
-        "event": {
-            "user_id": "1234",
-            "user_login": "cool_user",
-            "user_name": "Cool_User",
-            "broadcaster_user_id": "1337",
-            "broadcaster_user_login": "cooler_user",
-            "broadcaster_user_name": "Cooler_User",
-            "total": 1000,
-            "tier": "1000",
-            "cumulative_total": None,
-            "is_anonymous": False
-        }
-    },
-    "channel.subscription.message": {
-        "subscription": {
-            "id": "test_"+randString(),
-            "type": "channel.subscription.message"
-        },
-        "event": {
-            "user_id": "1234",
-            "user_login": "cool_user",
-            "user_name": "Cool_User",
-            "broadcaster_user_id": "1337",
-            "broadcaster_user_login": "cooler_user",
-            "broadcaster_user_name": "Cooler_User",
-            "tier": "1000",
-            "message": {
-                "text": "Love the stream! FevziGG",
-                "emotes": [
-                    {
-                        "begin": 23,
-                        "end": 30,
-                        "id": "302976485"
-                    }
-                ]
-            },
-            "cumulative_months": 5,
-            "streak_months": 3, # null if not shared
-            "duration_months": 6
         }
     },
     "channel.goal.progress": {
@@ -251,87 +172,7 @@ test_payloads = {
                 "text": "",
                 "fragments": []
             },
-            "notice_type": "<string>",
-            "sub": {
-                "sub_tier": "1000",
-                "is_prime": False,
-                "duration_months": 1
-            },
-            "resub": {
-                "cumulative_months": 10,
-                "duration_months": 1,
-                "streak_months": None,
-                "sub_tier": "1000",
-                "is_prime": False,
-                "is_gift": False,
-                "gifter_is_anonymous": None,
-                "gifter_user_name": None
-            },
-            "sub_gift": {
-                "duration_months": 1,
-                "cumulative_months": 10,
-                "sub_tier": "1000",
-                "recipient_user_name": "<string>"
-            },
-            "community_sub_gift": {
-                "sub_tier": "1000",
-                "total": 5
-            },
-            "gift_paid_upgrade": {
-                "gifter_is_anonymous": None,
-                "gifter_user_name": "<string>"
-            },
-            "prime_paid_upgrade": {
-                "sub_tier": "1000"
-            },
-            "pay_it_forward": {
-                "gifter_is_anonymous": None,
-                "gifter_user_name": "<string>"
-            },
-            "raid": {
-                "viewer_count": 100,
-                "user_name": "<string>"
-            },
-            "unraid": {},
-            "announcement": {
-                "color": "#0000FF"
-            },
-            "bits_badge_tier": {
-                "tier": 1000
-            },
-            "charity_donation": {
-                "charity_name": "Charity Name",
-                "amount": 10.0
-            },
-            "shared_chat_sub": None,
-            "shared_chat_resub": None,
-            "shared_chat_sub_gift": None,
-            "shared_chat_community_sub_gift": None,
-            "shared_chat_gift_paid_upgrade": None,
-            "shared_chat_prime_paid_upgrade": None,
-            "shared_chat_pay_it_forward": None,
-            "shared_chat_raid": None,
-            "shared_chat_announcement": None,
-            "source_broadcaster_user_id": None,
-            "source_broadcaster_user_login": None,
-            "source_broadcaster_user_name": None,
-            "source_message_id": None,
-            "source_badges": None
-        }
-    },
-    "channel.raid": {
-        "subscription": {
-            "id": "test_"+randString(),
-            "type": "channel.raid"
-        },
-        "event": {
-            "from_broadcaster_user_id": "1234",
-            "from_broadcaster_user_login": "cool_user",
-            "from_broadcaster_user_name": "Cool_User",
-            "to_broadcaster_user_id": "1337",
-            "to_broadcaster_user_login": "cooler_user",
-            "to_broadcaster_user_name": "Cooler_User",
-            "viewers": 9001
+            "notice_type": "<string>"
         }
     }
 }
@@ -356,51 +197,44 @@ class TesterBot(TwitchBot):
         payload = {}
         match cmd:
             case "channel.raid":
-                payload = test_payloads["channel.raid"]
+                payload = test_payloads.get("channel.raid").copy()
                 payload["event"]["viewer_count"] = int(args.get("viewer_count", 1))
                 payload["event"]["from_broadcaster_user_name"] = args.get("from", "Cool_User")
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.cheer":
-                payload = test_payloads["channel.cheer"]
+                payload = test_payloads.get("channel.cheer").copy()
                 payload["event"]["bits"] = int(args.get("bits", 1))
                 payload["event"]["is_anonymous"] = args.get("anon", False)
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.bits.use":
-                payload = test_payloads["channel.bits.use"]
+                payload = test_payloads.get("channel.bits.use").copy()
                 payload["event"]["bits"] = int(args.get("bits", 1))
-            case "channel.subscribe":
-                payload = test_payloads["channel.subscribe"]
-                payload["event"]["tier"] = args.get("tier", 1)
-                payload["event"]["is_gift"] = args.get("gifted", False)
-            case "channel.subscription.gift":
-                payload = test_payloads["channel.subscription.gift"]
-                payload["event"]["total"] = int(args.get("total", 1))
-                payload["event"]["tier"] = args.get("tier", 1)
-                payload["event"]["is_anonymous"] = args.get("anon", False)
-            case "channel.subscription.message":
-                payload = test_payloads["channel.subscription.message"]
-                payload["event"]["tier"] = args.get("tier", 1)
-                payload["event"]["cumulative_months"] = int(args.get("months", 1))
-                payload["event"]["streak_months"] = int(args.get("streak", 1))
-                payload["event"]["message"] = args.get("msg", "Yaba daba DO!")
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.goal.progress":
-                payload = test_payloads["channel.goal.progress"]
+                payload = test_payloads.get("channel.goal.progress").copy()
                 payload["event"]["type"] = args.get("type", "bits")
                 payload["event"]["current_amount"] = int(args.get("current", 0))
                 payload["event"]["target_amount"] = int(args.get("target", 100))
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.hype_train.progress":
-                payload = test_payloads["channel.hype_train.progress"]
+                payload = test_payloads.get("channel.hype_train.progress").copy()
                 payload["event"]["level"] = int(args.get("level", 1))
                 payload["event"]["total_contributions"] = int(args.get("total", 100))
                 payload["event"]["progress"] = int(args.get("progress", 50))
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.hype_train.end":
-                payload = test_payloads["channel.hype_train.end"]
+                payload = test_payloads.get("channel.hype_train.end").copy()
                 payload["event"]["level"] = int(args.get("level", 1))
                 payload["event"]["total"] = int(args.get("total", 100))
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.follow":
-                payload = test_payloads["channel.follow"]
+                payload = test_payloads.get("channel.follow").copy()
                 payload["event"]["user_name"] = args.get("user_name", "cool_user")
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
             case "channel.chat.notification":
-                payload = test_payloads["channel.chat.notification"]
-                notice_type = args.get("notice_type", "")
+                payload = test_payloads.get("channel.chat.notification").copy()
+                notice_type = ""
+                notice_type = args.get("notice_type")
                 payload["event"]["notice_type"] = notice_type
                 payload["event"]["system_message"] = args.get("system_message", "system_message")
                 payload["event"]["message"]["text"] = args.get("message", "")
@@ -413,6 +247,7 @@ class TesterBot(TwitchBot):
                             "is_prime": args.get("is_prime", False),
                             "duration_months": int(args.get("duration_months", 1))
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "resub":
                         payload["event"]["resub"] = {
                             "cumulative_months": int(args.get("cumulative_months", 10)),
@@ -424,6 +259,7 @@ class TesterBot(TwitchBot):
                             "gifter_is_anonymous": args.get("gifter_is_anonymous", None),
                             "gifter_user_name": args.get("gifter_user_name", None)
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "sub_gift":
                         payload["event"]["sub_gift"] = {
                             "duration_months": int(args.get("duration_months", 1)),
@@ -431,49 +267,57 @@ class TesterBot(TwitchBot):
                             "sub_tier": args.get("sub_tier", "1000"),
                             "recipient_user_name": args.get("recipient_user_name", "<string>")
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "community_sub_gift":
                         payload["event"]["community_sub_gift"] = {
                             "sub_tier": args.get("sub_tier", "1000"),
                             "total": int(args.get("total", 5))
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "gift_paid_upgrade":
                         payload["event"]["gift_paid_upgrade"] = {
                             "gifter_is_anonymous": args.get("gifter_is_anonymous", None),
                             "gifter_user_name": args.get("gifter_user_name", "<string>")
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "prime_paid_upgrade":
                         payload["event"]["prime_paid_upgrade"] = {
                             "sub_tier": args.get("sub_tier", "1000")
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "raid":
                         payload["event"]["raid"] = {
                             "viewer_count": int(args.get("viewer_count", 100)),
                             "profile_image_url": args.get("profile_image_url", "<string>"),
                             "user_name": args.get("user_name", "<string>")
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "unraid":
                         payload["event"]["unraid"] = {}
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "pay_it_forward":
                         payload["event"]["pay_it_forward"] = {
                             "gifter_is_anonymous": args.get("gifter_is_anonymous", None),
                             "gifter_user_name": args.get("gifter_user_name", "<string>")
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "announcement":
                         payload["event"]["announcement"] = {
                             "color": args.get("color", "#0000FF")
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "bits_badge_tier":
                         payload["event"]["bits_badge_tier"] = {
                             "tier": int(args.get("tier", 1000))
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "charity_donation":
                         payload["event"]["charity_donation"] = {
                             "charity_name": args.get("charity_name", "Charity Name"),
                             "amount": float(args.get("amount", 10.0))
                         }
+                        await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case _:
                 raise ValueError(f"Unknown event type: {cmd}")
-        await self.ws.handle_message(
-            {"metadata": test_meta_data(), "payload": payload}
-        )
+        
         return self.app.response_json({"status": True})
