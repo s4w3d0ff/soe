@@ -57,7 +57,7 @@ class ChannelBan(Alert):
             logger.error(f"[Alert] Ban: Error rendering template: {e}")
             return ""
     
-    @duck_volume(volume=50)
+    @duck_volume(volume=40)
     async def process(self):
         self.bot.alertDone = False
         logger.debug(f"[Alert] Ban: \n{json.dumps(self.data, indent=2)}")
@@ -66,10 +66,11 @@ class ChannelBan(Alert):
         dur = "permanently banned" if self.data['is_permanent'] else "timed out"
         reason = self.data['reason']
         name = self.data['user_name']
-        logger.debug(f"[Alert] Ban: starting ai thread")
-        q = f'Please inform everyone that "{name}" was just {dur} from the chat for the reason: "{reason if reason else "Acting like a bot"}".'
         if hasattr(self.bot, 'ai'):
+            logger.debug(f"[Alert] Ban: starting ai thread")
+            q = f'Please inform everyone that "{name}" was just {dur} from the chat for the reason: "{reason if reason else "Acting like a bot"}".'
             self.ai_thread = self.bot.ai.threaded_ask(q)
+            await self.bot.http.sendChatMessage(f'{q}')
         else:
             await self.bot.http.sendChatMessage(f'Get rekt {name} Modding')
         picurl = await self.getUserPic(self.data["user_id"])

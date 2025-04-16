@@ -17,11 +17,6 @@ class GoalBot(TwitchBot):
         super().__init__(*args, **kwargs)
         self.goals_cfg = goals_cfg
         self.goal_queue = asyncio.Queue()
-        self.alertws_queue = asyncio.Queue()
-
-    @route('/goals')
-    async def goals(self, request):
-        return await self.app.response_html('templates/goals.html')
     
     async def get_total_cheers(self, days_back=30, base_dir='db/alerts/channel.cheer'):
         current_date = datetime.now()
@@ -105,26 +100,6 @@ class GoalBot(TwitchBot):
                 break
         logger.warning("goalsws connection closed")
 
-    #=====================================================================
-    @route('/alerts')
-    async def alerts(self, request):
-        return await self.app.response_html('templates/alerts.html')
-
-    @websocket('/alertsws')
-    async def alertsws(self, ws, request):
-        while not self.http.user_id:
-            logger.error(f"alertsws error: not logged in yet")
-            await asyncio.sleep(10)
-        logger.warning(f"Websocket connected: alertsws")
-        while not ws.closed:
-            try:
-                update = await asyncio.wait_for(self.alertws_queue.get(), timeout=15)
-                await ws.send_json(update)
-                self.alertws_queue.task_done()
-            except asyncio.TimeoutError:
-                await ws.ping()
-                continue
-            except Exception as e:
-                logger.error(f"Unexpected error in alertsws loop: {e}")
-                break
-        logger.warning("alertsws connection closed")
+    @route('/goals')
+    async def goals(self, request):
+        return await self.app.response_html('templates/goals.html')

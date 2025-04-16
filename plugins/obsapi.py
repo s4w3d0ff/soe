@@ -23,27 +23,23 @@ class OBSController:
         while not self._connected:
             try:
                 await self.ws.connect()
-                await self.ws.wait_until_identified()
-                self._connected = True
+                self._connected = await self.ws.wait_until_identified()
             except Exception as e:
                 logger.debug(f'{e}')
-                logger.error(f"Waiting for OBS websocket connection...")
+                logger.error(f"Failed to connect to OBS on {self.host}:{self.port}! Is OBS running?")
                 await asyncio.sleep(15)
         logger.warning(f"Connected to obs!")
-        out = {}
-        for scene in self.media_scenes:
-            items = await self._get_scene_item_list(scene)
-            out[scene] = [item['sourceName'] for item in items]
-        self.media_scenes = out
-        # Register callbacks
+        await asyncio.sleep(2)
+        self.media_scenes = {scene : [item['sourceName'] for item in await self._get_scene_item_list(scene)] for scene in self.media_scenes}
         self.ws.register_event_callback(self._handle_media_end, 'MediaInputPlaybackEnded')
 
     async def call(self, req, **kwargs):
+        """ Make a call to OBS websocket API """
         response = await self.ws.call(simpleobsws.Request(req, kwargs))
         if response.ok():
             return response.responseData
         logger.error(f"{response.requestStatus.comment}")
-        return None
+        return False
 
     async def cleanup(self):
         self._connected = False
@@ -52,10 +48,11 @@ class OBSController:
     async def _get_scene_item_list(self, scene_name):
         """ Get list of items in a scene """
         response = await self.call('GetSceneItemList', **{'sceneName': scene_name})
-        return response.get('sceneItems', [])
+        if response:
+            return response.get('sceneItems', [])
 
     async def _get_stream_status(self):
-        """ Get list of items in a scene """
+        """ Get stream status """
         return await self.call('GetStreamStatus')
 
     async def _get_scene_item_id(self, scene_name, source_name):
@@ -65,28 +62,20 @@ class OBSController:
                 'sceneName': scene_name,
                 'sourceName': source_name
             })
-        return response['sceneItemId']
+        if response:
+            return response['sceneItemId']
 
     async def start_recording(self):
         """ Starts the recorder """
-        logger.warning(f"Starting recording in obs!")
+        logger.warning(f"OBS starting recording!")
         return await self.call('StartRecord')
 
     async def stop_recording(self):
         """ Stops the recorder """
         response = await self.call('StopRecord')
-        logger.warning(f"Stopped recording in obs!")
-        return response["outputPath"]
-
-    async def hide_all_sources(self, scene_name):
-        """ Hide all sources in a scene"""
-        if scene_name in self.media_scenes:
-            for item in self.media_scenes:
-                await self.hide_source(item, scene_name)
-        else:
-            items = await self._get_scene_item_list(scene_name)
-            for item in items:
-                await self.hide_source(item['sourceName'], scene_name)
+        logger.warning(f"OBS stopped recording!")
+        if response:
+            return response["outputPath"]
 
     async def show_source(self, source_name, scene_name=None):
         """ Show a source in a scene """
@@ -98,18 +87,12 @@ class OBSController:
                     scene_name = scene
                     break
         scene_item_id = await self._get_scene_item_id(scene_name, source_name)
-        if scene_item_id is None:
-            return
         # Set the enabled state to true
-        request = simpleobsws.Request('SetSceneItemEnabled', {
+        return await self.call('SetSceneItemEnabled', **{
             'sceneName': scene_name,
             'sceneItemId': scene_item_id,
             'sceneItemEnabled': True
         })
-        response = await self.ws.call(request)
-        if not response.ok():
-            logger.error(f"Failed to show source {source_name} in scene {scene_name}")
-
 
     async def hide_source(self, source_name, scene_name=None):
         """ Hide a source in a scene """
@@ -121,28 +104,30 @@ class OBSController:
                     scene_name = scene
                     break
         scene_item_id = await self._get_scene_item_id(scene_name, source_name)
-        if scene_item_id is None:
-            return
         # Set the enabled state to false
-        request = simpleobsws.Request('SetSceneItemEnabled', {
+        return await self.call('SetSceneItemEnabled', **{
             'sceneName': scene_name,
             'sceneItemId': scene_item_id,
             'sceneItemEnabled': False
         })
-        response = await self.ws.call(request)
-        if not response.ok():
-            logger.error(f"Failed to hide source {source_name} in scene {scene_name}")
+
+    async def hide_all_sources(self, scene_name):
+        """ Hide all sources in a scene"""
+        if scene_name in self.media_scenes:
+            for item in self.media_scenes:
+                await self.hide_source(item, scene_name)
+        else:
+            items = await self._get_scene_item_list(scene_name)
+            for item in items:
+                await self.hide_source(item['sourceName'], scene_name)
 
     async def set_source_text(self, source_name, text_content):
         """ Edit the text content of a text source """
         logger.info(f"Setting text content for source {source_name}")
-        request = simpleobsws.Request('SetInputSettings', {
+        return await self.call('SetInputSettings', **{
             'inputName': source_name,
             'inputSettings': {'text': text_content}
         })
-        response = await self.ws.call(request)
-        if not response.ok():
-            logger.error(f"Failed to set text content for source {source_name}")
 
     async def _handle_media_end(self, data):
         """ Logic to execute whenever some media ends """
