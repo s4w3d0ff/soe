@@ -10,6 +10,17 @@
 <body>
     <div class="container">
         <div class="card">
+            <!-- Bits Section -->
+            <h2>channel.bits.use</h2>
+            <div class="input-group">
+                <input type="number" id="bitsAmount" value="69">
+                <label>Bits</label>
+            </div>
+            <div class="control-group">
+                <button onclick="testEvent('channel.bits.use')">Send Notification</button>
+            </div>
+        </div>
+        <div class="card">
             <h2>channel.chat.notification</h2>
             <div class="input-group">
                 <label>Type:</label>
@@ -47,18 +58,15 @@
             </div>
         </div>
         <div class="card">
-            <!-- Bits Section -->
-            <h2>channel.cheer / channel.bits.use</h2>
+            <!-- Follow Section -->
+            <h2>channel.follow</h2>
             <div class="input-group">
-                <input type="number" id="bitsAmount" value="69">
-                <label>Bits</label>
-                <input type="checkbox" id="bitsAnon">
-                <label>Anon</label>
+                <label>Username:</label>
+                <input type="text" id="followUsername" value="cool_user">
             </div>
             <div class="control-group">
-                <button onclick="testEvent('channel.cheer')">channel.cheer</button>
-                <button onclick="testEvent('channel.bits.use')">channel.bits.use</button>
-            </div>
+                <button onclick="testEvent('channel.follow')">Send Notification</button>
+            </div>  
         </div>
         <div class="card">
             <!-- Goal Progress Section -->
@@ -94,17 +102,6 @@
                 <button onclick="testEvent('channel.hype_train.progress')">channel.hype_train.progress</button>
                 <button onclick="testEvent('channel.hype_train.end')">channel.hype_train.end</button>
             </div>
-        </div>
-        <div class="card">
-            <!-- Follow Section -->
-            <h2>channel.follow</h2>
-            <div class="input-group">
-                <label>Username:</label>
-                <input type="text" id="followUsername" value="cool_user">
-            </div>
-            <div class="control-group">
-                <button onclick="testEvent('channel.follow')">channel.follow</button>
-            </div>  
         </div>
     </div>
     <div id="statusMessage" class="status-message"></div>
