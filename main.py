@@ -7,7 +7,7 @@ from poolguy.storage import loadJSON
 from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
-    TesterBot, SpotifyBot, TarkovBot, 
+    TesterBot, SpotifyBot, TarkovBot, ChatBot,
     SubathonBot, AIBot, GoalBot, BannedBot, OBSBot
 )
 
@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 #==========================================================================================
 class MyBot(
         OBSBot, SubathonBot, GoalBot, BannedBot, 
-        SpotifyBot, TarkovBot, CommandBot, TesterBot, UIBot
+        SpotifyBot, TarkovBot, CommandBot, 
+        ChatBot, TesterBot, UIBot
         ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
@@ -40,6 +41,7 @@ class MyBot(
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
+        await self.setup_chat()
         self.spotify.token_handler.storage = self.http.storage
         await self.spotify.login()
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
@@ -49,6 +51,7 @@ class MyBot(
         self.subathon.pause()
         await self.obsws._setup()
         await self.refresh_obs_scenes()
+        
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
@@ -127,7 +130,7 @@ class MyBot(
 
 
 if __name__ == '__main__':
-    from plugins.alerts import alert_objs
+    from plugins import alert_objs
     from rich.logging import RichHandler
     logging.basicConfig(
         format='%(message)s',
