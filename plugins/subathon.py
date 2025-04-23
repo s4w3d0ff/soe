@@ -238,7 +238,7 @@ class SubathonBot(TwitchBot):
         self.subathon.start()
         return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
 
-    @command(name="subathon", aliases=["streamathon"])
+    @command(name="subathon", aliases=["streamathon, eggathon"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)
     async def subathon_cmd(self, user, channel, args):
         """Shows Subathon stats """

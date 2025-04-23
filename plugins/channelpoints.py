@@ -4,7 +4,7 @@ import asyncio
 import logging
 from poolguy.storage import loadJSON
 from poolguy import Alert
-from plugins.spotifyapi import duck_volume
+from .spotifyapi import duck_volume
 
 logger = logging.getLogger(__name__)
 

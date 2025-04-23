@@ -5,7 +5,7 @@ import time
 import logging
 from datetime import datetime, timedelta
 from poolguy.storage import aioLoadJSON
-from poolguy import TwitchBot, route, websocket
+from poolguy import TwitchBot, Alert, route, websocket
 
 logger = logging.getLogger(__name__)
 
@@ -103,3 +103,20 @@ class GoalBot(TwitchBot):
     @route('/goals')
     async def goals(self, request):
         return await self.app.response_html('templates/goals.html')
+
+#############################=========---------
+### channel.goal.progress ###=============---------
+#############################=================---------
+class ChannelGoalProgress(Alert):
+    queue_skip = True
+    store = False
+
+    async def process(self):
+        logger.debug(f"{json.dumps(self.data, indent=2)}")
+        g_type = self.data['type']
+        if hasattr(self.bot, 'goal_queue'):
+            await self.bot.goal_queue.put({
+                    "gtype": g_type,
+                    "amount": int(self.data['current_amount'])
+                })
+            logger.warning(f"{g_type} goal updated to {self.data['current_amount']}")

@@ -2,8 +2,8 @@ import json
 import random
 import logging
 from poolguy import Alert
-from plugins.spotifyapi import duck_volume
-from plugins.tts import generate_speech, VOICES
+from .spotifyapi import duck_volume
+from .tts import generate_speech, VOICES
 
 logger = logging.getLogger(__name__)
 
