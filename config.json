@@ -33,7 +33,13 @@
 			"channel.bits.use": null,
 			"channel.chat.notification": null,
 			"channel.chat.message": null,
+			"channel.chat.message_delete": null,
+			"channel.chat.clear_user_messages": null,
 			"channel.goal.progress": null,
+			"channel.prediction.begin": null,
+			"channel.prediction.progress": null,
+			"channel.prediction.lock": null,
+			"channel.prediction.end": null,
 			"channel.hype_train.progress": null,
 			"channel.hype_train.end": null
 		},

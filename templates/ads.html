@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ads Player</title>
+    <title>Ads</title>
     <style>
         body {
             margin: 0 auto;
@@ -24,88 +24,88 @@
     </style>
 </head>
 <body>
-<video id="videoPlayer"></video>
-<div id="playlist"></div>
-<script>
-    // Helper function to generate sequential video paths
-    const generateVideoPaths = (baseDir, prefix, count) => 
-        Array.from({ length: count }, (_, i) => 
-            `static/videos/${baseDir}/${prefix}${i + 1}.webm`
-        );
+    <video id="videoPlayer"></video>
+    <div id="playlist"></div>
+    <script>
+// Helper function to generate sequential video paths
+const generateVideoPaths = (baseDir, prefix, count) => 
+    Array.from({ length: count }, (_, i) => 
+        `static/videos/${baseDir}/${prefix}${i + 1}.webm`
+    );
 
-    // Generate arrays using the helper function
-    const adVideos = generateVideoPaths('ads', 'ad', 59);
-    const noiseVideos = generateVideoPaths('noise', 'noise', 3);
+// Generate arrays using the helper function
+const adVideos = generateVideoPaths('ads', 'ad', 59);
+const noiseVideos = generateVideoPaths('noise', 'noise', 3);
 
-    // Shuffle array function
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
+// Shuffle array function
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
     }
+    return array;
+}
 
-    // Get random item from array
-    function getRandomItem(array) {
-        return array[Math.floor(Math.random() * array.length)];
-    }
+// Get random item from array
+function getRandomItem(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
 
-    // Create playlist
-    function createPlaylist() {
-        const shuffledAds = shuffleArray([...adVideos]);
-        const playlist = [];
+// Create playlist
+function createPlaylist() {
+    const shuffledAds = shuffleArray([...adVideos]);
+    const playlist = [];
+    
+    shuffledAds.forEach((ad, index) => {
+        // Add a random noise video before each ad
+        playlist.push(getRandomItem(noiseVideos));
+        playlist.push(ad);
         
-        shuffledAds.forEach((ad, index) => {
-            // Add a random noise video before each ad
+        // Add a final noise video after the last ad
+        if (index === shuffledAds.length - 1) {
             playlist.push(getRandomItem(noiseVideos));
-            playlist.push(ad);
-            
-            // Add a final noise video after the last ad
-            if (index === shuffledAds.length - 1) {
-                playlist.push(getRandomItem(noiseVideos));
-            }
-        });
-
-        return playlist;
-    }
-
-    // Player functionality
-    const videoPlayer = document.getElementById('videoPlayer');
-    const playlistElement = document.getElementById('playlist');
-    let currentVideoIndex = 0;
-    let playlist = createPlaylist();
-
-    // Display playlist
-    function displayPlaylist() {
-        playlistElement.innerHTML = '<h3>Current Playlist:</h3>' + 
-            playlist.map((video, index) => 
-                `<div class="${index === currentVideoIndex ? 'current' : ''}">${index + 1}. ${video.split('/').pop()}</div>`
-            ).join('');
-    }
-
-    // Play video
-    function playVideo(index) {
-        if (index >= playlist.length) {
-            // Playlist finished, create new playlist and start over
-            playlist = createPlaylist();
-            currentVideoIndex = 0;
         }
-
-        videoPlayer.src = playlist[currentVideoIndex];
-        videoPlayer.play();
-        displayPlaylist();
-    }
-
-    // Event listeners
-    videoPlayer.addEventListener('ended', () => {
-        currentVideoIndex++;
-        playVideo(currentVideoIndex);
     });
 
-    // Initialize
+    return playlist;
+}
+
+// Player functionality
+const videoPlayer = document.getElementById('videoPlayer');
+const playlistElement = document.getElementById('playlist');
+let currentVideoIndex = 0;
+let playlist = createPlaylist();
+
+// Display playlist
+function displayPlaylist() {
+    playlistElement.innerHTML = '<h3>Current Playlist:</h3>' + 
+        playlist.map((video, index) => 
+            `<div class="${index === currentVideoIndex ? 'current' : ''}">${index + 1}. ${video.split('/').pop()}</div>`
+        ).join('');
+}
+
+// Play video
+function playVideo(index) {
+    if (index >= playlist.length) {
+        // Playlist finished, create new playlist and start over
+        playlist = createPlaylist();
+        currentVideoIndex = 0;
+    }
+
+    videoPlayer.src = playlist[currentVideoIndex];
+    videoPlayer.play();
     displayPlaylist();
+}
+
+// Event listeners
+videoPlayer.addEventListener('ended', () => {
+    currentVideoIndex++;
     playVideo(currentVideoIndex);
-</script>
+});
+
+// Initialize
+displayPlaylist();
+playVideo(currentVideoIndex);
+    </script>
 </body>
 </html>

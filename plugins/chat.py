@@ -8,6 +8,8 @@ from poolguy.twitchws import MaxSizeDict
 logger = logging.getLogger(__name__)
 
 emoteEndpoint = "https://static-cdn.jtvnw.net/emoticons/v2/"
+sevenTVcdnurl = "https://cdn.7tv.app/emote/"
+sevenTVurl = "https://7tv.io/v3/"
 
 #==========================================================================================
 # ChatBot ===============================================================================
@@ -35,11 +37,10 @@ class ChatBot(TwitchBot):
 
     async def get7tvEmotes(self, user_id="global"):
         """ Get channel and global emotes from 7TV """
-        cdnurl = "https://cdn.7tv.app/emote/"
         if user_id == "global":
-            url = "https://7tv.io/v3/emote-sets/global"
+            url = sevenTVurl+"emote-sets/global"
         else:
-            url = f"https://7tv.io/v3/users/twitch/{user_id}"
+            url = sevenTVurl+f"users/twitch/{user_id}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 response.raise_for_status()
@@ -48,7 +49,7 @@ class ChatBot(TwitchBot):
                     emotes = rmotes['emotes']
                 else:
                     emotes = rmotes['emote_set']['emotes']
-                return {e['name']: f"{cdnurl}{e['id']}/4x.webp" for e in emotes}
+                return {e['name']: f"{sevenTVcdnurl}{e['id']}/4x.webp" for e in emotes}
 
     @websocket('/chatws')
     async def chat_ws(self, ws, request):
@@ -149,5 +150,5 @@ class ChannelChatClearUserMessages(Alert):
     async def process(self):
         if hasattr(self.bot, 'chat_history'):
             for id, msg in self.bot.chat_history.items():
-                if msg['user_id'] == self.data['target_user_id']:
+                if msg['chatter_user_id'] == self.data['target_user_id']:
                     out = self.bot.chat_history.pop(id)

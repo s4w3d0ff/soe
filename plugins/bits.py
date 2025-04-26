@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 cheer_cfg = loadJSON("db/cheers_cfg.json")
 
 bit_scene = "[S] Bit Alerts"
-bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
+bit_altsources = ["CheerText", "alertbg", "AlerttxtBG"]
 bit_text = "CheerText"
 tts_limit = 123
 tts_source = "bit_tts"
@@ -25,11 +25,9 @@ class ChannelBitsUse(Alert):
     priority = 1
 
     def remove_cheermotes(self, message):
-        # this needs to be fixed so that it doesnt remove reqular emotes
         result = ""
         for fragment in message.get('fragments', []):
-            # Only add fragments of type 'text'
-            if fragment.get('type') == 'text':
+            if fragment['type'] != 'cheermote':
                 result += fragment.get('text', '')
         return result.strip()
 
@@ -60,11 +58,11 @@ class ChannelBitsUse(Alert):
             await generate_speech(text, tts_path, voice)
         txt = cheer_cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
         await self.bot.obsws.set_source_text(bit_text, ' '+txt)
-        for a in bit_altscenes:
+        for a in bit_altsources:
             await self.bot.obsws.show_source(a, bit_scene)
         await self.bot.obsws.show_and_wait(cheer_cfg[alertK]['source'], bit_scene)
         await self.bot.obsws.set_source_text(bit_text, "")
-        for a in bit_altscenes:
+        for a in bit_altsources:
             await self.bot.obsws.hide_source(a, bit_scene)
         if text:
             await self.bot.obsws.show_and_wait(tts_source, bit_scene)

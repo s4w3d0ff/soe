@@ -7,8 +7,9 @@ from poolguy.storage import loadJSON
 from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
-    TesterBot, SpotifyBot, TarkovBot, 
-    SubathonBot, AIBot, GoalBot, BannedBot, OBSBot
+    TesterBot, SpotifyBot, TarkovBot, ChatBot,
+    SubathonBot, AIBot, GoalBot, BannedBot, OBSBot,
+    PredictionBot
 )
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,8 @@ logger = logging.getLogger(__name__)
 #==========================================================================================
 class MyBot(
         OBSBot, SubathonBot, GoalBot, BannedBot, 
-        SpotifyBot, TarkovBot, CommandBot, TesterBot, UIBot
+        SpotifyBot, TarkovBot, CommandBot, 
+        PredictionBot, ChatBot, TesterBot, UIBot
         ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
@@ -40,6 +42,7 @@ class MyBot(
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
+        await self.setup_chat()
         self.spotify.token_handler.storage = self.http.storage
         await self.spotify.login()
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
@@ -49,6 +52,7 @@ class MyBot(
         self.subathon.pause()
         await self.obsws._setup()
         await self.refresh_obs_scenes()
+        
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
@@ -115,19 +119,23 @@ class MyBot(
     async def cheers_cmd(self, user, channel, args):
         cfg = loadJSON("db/cheers_cfg.json")
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
-        out = ""
+        out = "".join(each)
         for i in each:
             if len(out)+len(i) > 400:
-                await self.send_chat(out, channel["broadcaster_id"])
+                r = await self.http.sendChatMessage(out, channel["broadcaster_id"])
+                if not r[0]['is_sent']:
+                    logger.error(f"Message not sent! {r[0]['drop_reason']}")
                 out = f"{i}"
             else:
                 out += f"{i}"
         if len(out) > 0:
-            await self.send_chat(out, channel["broadcaster_id"])
+            r = await self.http.sendChatMessage(out, channel["broadcaster_id"])
+            if not r[0]['is_sent']:
+                logger.error(f"Message not sent! {r[0]['drop_reason']}")
 
 
 if __name__ == '__main__':
-    from plugins.alerts import alert_objs
+    from plugins import alert_objs
     from rich.logging import RichHandler
     logging.basicConfig(
         format='%(message)s',

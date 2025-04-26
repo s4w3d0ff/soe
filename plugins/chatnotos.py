@@ -31,6 +31,7 @@ class SubNoto(Alert):
         tier = int(event['sub_tier'][0])
         is_prime = event['is_prime']
         duration = event['duration_months']
+        is_gift = event['is_gift']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(1, f't{tier}')
@@ -98,19 +99,14 @@ class GiftsubNoto(Alert):
         self._source = "reallynice"
 
     @duck_volume(volume=30)
-    async def process(self):
-        notice_type = self.data['notice_type']
+    async def _process(self):
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        sys_message = self.data['system_message']
-        event = self.data[notice_type]
-        if event["community_gift_id"]:
-            return
+        event = self.data[self.data['notice_type']]
         tier = event['sub_tier'][0]
         duration = event['duration_months']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(1, f't{tier}')
-
         if hasattr(self.bot, 'obsws'):
             await self.bot.obsws.set_source_text(
                     self._text, 
@@ -122,6 +118,12 @@ class GiftsubNoto(Alert):
             await self.bot.obsws.set_source_text(self._text, "")
             for a in self._altscenes:
                 await self.bot.obsws.hide_source(a, self._scene)
+    
+    async def process(self):
+        event = self.data[self.data['notice_type']]
+        if event["community_gift_id"]:
+            return
+        await self._process()
 
 class CommunitygiftsubNoto(Alert):
     queue_skip = False
@@ -332,5 +334,8 @@ class ChannelChatNotification(Alert):
             case _:
                 pass
         if alert:
+            if alert.store:
+                a = args[1:]
+                await self.bot.storage.save_alert(*a)
             await self.bot.ws.notification_handler._queue.put(alert)
             alert = None

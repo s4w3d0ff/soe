@@ -265,13 +265,15 @@ class TesterBot(TwitchBot):
                             "duration_months": int(args.get("duration_months", 1)),
                             "cumulative_months": int(args.get("cumulative_months", 10)),
                             "sub_tier": args.get("sub_tier", "1000"),
-                            "recipient_user_name": args.get("recipient_user_name", "<string>")
+                            "recipient_user_name": args.get("recipient_user_name", "<string>"),
+                            "community_gift_id": args.get("community_gift_id", None)
                         }
                         await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "community_sub_gift":
                         payload["event"]["community_sub_gift"] = {
                             "sub_tier": args.get("sub_tier", "1000"),
-                            "total": int(args.get("total", 5))
+                            "total": int(args.get("total", 5)),
+                            "cumulative_total": int(args.get("cumulative_total", 50))
                         }
                         await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
                     case "gift_paid_upgrade":
