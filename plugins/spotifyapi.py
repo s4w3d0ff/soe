@@ -120,7 +120,7 @@ class SpotifyBot(TwitchBot):
     @rate_limit(calls=1, period=60, warn_cooldown=30)
     async def now_playing(self, user, channel, args):
         now = await self.spotify.get_now_playing()
-        self.send_chat(f"Currently playing: {now['name']} by {', '.join([artist['name'] for artist in now['artists']])} [{now['url']}]")
+        await self.send_chat(f"{now['name']} by {', '.join(now['artists'])} {now['url']}", channel["broadcaster_id"])
     
     @route('/spotify/skip')
     async def spotify_skip(self, request):

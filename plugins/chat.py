@@ -122,6 +122,7 @@ class ChannelChatMessage(Alert):
         if hasattr(self.bot, 'chat_history'):
             out = {
                 'user': self.data['chatter_user_name'],
+                'user_id': self.data['chatter_user_id'],
                 'color': self.data['color'] or "#32b5c5c",
                 'badges': await self.parseBadges(),
                 'text': await self.parseEmotesText(),
@@ -149,6 +150,9 @@ class ChannelChatClearUserMessages(Alert):
 
     async def process(self):
         if hasattr(self.bot, 'chat_history'):
-            for id, msg in self.bot.chat_history.items():
-                if msg['chatter_user_id'] == self.data['target_user_id']:
-                    out = self.bot.chat_history.pop(id)
+            history = self.bot.chat_history.items()
+            # Collect keys to be removed in a separate list
+            keys_to_remove = [id for id, msg in history if msg['user_id'] == self.data['target_user_id']]
+            # Remove the keys from the dictionary
+            for id in keys_to_remove:
+                self.bot.chat_history.pop(id)
