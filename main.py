@@ -56,8 +56,10 @@ class MyBot(
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
+        await self.obsws.hide_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
         await asyncio.sleep(2)
         await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
+        await self.obsws.show_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
 
     async def shutdown(self, reset=True):
         """Gracefully shutdown the bot"""
@@ -120,19 +122,7 @@ class MyBot(
         cfg = loadJSON("db/cheers_cfg.json")
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
         out = "".join(each)
-        for i in each:
-            if len(out)+len(i) > 400:
-                r = await self.http.sendChatMessage(out, channel["broadcaster_id"])
-                if not r[0]['is_sent']:
-                    logger.error(f"Message not sent! {r[0]['drop_reason']}")
-                out = f"{i}"
-            else:
-                out += f"{i}"
-        if len(out) > 0:
-            r = await self.http.sendChatMessage(out, channel["broadcaster_id"])
-            if not r[0]['is_sent']:
-                logger.error(f"Message not sent! {r[0]['drop_reason']}")
-
+        await self.send_chat(out, channel["broadcaster_id"])
 
 if __name__ == '__main__':
     from plugins import alert_objs
