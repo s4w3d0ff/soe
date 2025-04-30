@@ -1,12 +1,17 @@
 {
 	"25": {
-		"source": "fart",
-		"name": "fart",
-		"text": "{user} dropped {amount} bits!"
+		"source": "whatever",
+		"name": "whatever",
+		"text": "WHATEVER!"
 	},
 	"50": {
 		"source": "Coffee",
 		"name": "coffee",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"55": {
+		"source": "eggshort",
+		"name": "egg",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"69": {
@@ -43,6 +48,11 @@
 		"source": "danksandboarding",
 		"name": "sandboarding",
 		"text": "{user} dropped {amount} bits!"
+	},
+	"213": {
+		"source": "scratch.mp3",
+		"name": "skip song",
+		"text": "{user} didn't like that song!"
 	},
 	"225": {
 		"source": "Delayed",
