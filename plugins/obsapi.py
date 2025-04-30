@@ -152,7 +152,7 @@ class OBSController:
         logger.warning(f"Waiting on: {self.wait_for}")
         await self.wait_for_event.wait()
         self.wait_for = None
-        await asyncio.sleep(0.5)
+        await self.hide_source(source_name, scene_name)
     
     async def clear_wait(self):
         if self.wait_for:

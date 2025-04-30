@@ -5,7 +5,7 @@ from poolguy import Alert, TwitchBot, route, websocket
 
 logger = logging.getLogger(__name__)
 
-predict_source = ["[S] Prediction", "[M] Prediction"]
+predict_source = ["Prediction [SOE]", "[S] Prediction"]
 
 #==========================================================================================
 # PredictionBot ===========================================================================
@@ -64,7 +64,7 @@ class ChannelPredictionBegin(Alert):
         if hasattr(self.bot, 'current_prediction'):
             self.bot.current_prediction = self.data.copy()
         if hasattr(self.bot, 'obsws'):
-            self.obsws.show_source(*predict_source)
+            await self.bot.obsws.show_source(*predict_source)
 
 
 
@@ -130,7 +130,7 @@ class ChannelPredictionProgress(Alert):
         if hasattr(self.bot, 'current_prediction'):
             self.bot.current_prediction = self.data.copy()
         if hasattr(self.bot, 'obsws'):
-            self.obsws.show_source(*predict_source)
+            await self.bot.obsws.show_source(*predict_source)
 
 
 ###################################=========---------
@@ -195,7 +195,7 @@ class ChannelPredictionLock(Alert):
         if hasattr(self.bot, 'current_prediction'):
             self.bot.current_prediction = self.data.copy()
         if hasattr(self.bot, 'obsws'):
-            self.obsws.show_source(*predict_source)
+            await self.bot.obsws.show_source(*predict_source)
 
 
 ###################################=========---------
@@ -269,9 +269,9 @@ class ChannelPredictionEnd(Alert):
     async def process(self):
         logger.warning(f'{json.dumps(self.data, indent=4)}')
         if hasattr(self.bot, 'current_prediction'):
-            self.bot.current_prediction = None
-        asyncio.sleep(15)
+            self.bot.current_prediction = self.data.copy()
+        await asyncio.sleep(30)
         if hasattr(self.bot, 'obsws'):
-            self.obsws.hide_source(*predict_source)
+            await self.bot.obsws.hide_source(*predict_source)
 
 

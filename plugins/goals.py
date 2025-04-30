@@ -38,11 +38,10 @@ class GoalBot(TwitchBot):
         return total_bits
         
     async def send_current_bits_amount(self, ws):
-        cheers = await self.get_total_cheers(base_dir='db/alerts/channel.cheer') # going to be deprecated
         bits = await self.get_total_cheers(base_dir='db/alerts/channel.bits.use')
         out = {
             "progress_type": "bits",
-            "amount": cheers + bits
+            "amount": bits
         }
         logger.debug(f"send_current_bits_amount: {out}")
         await ws.send_json(out)

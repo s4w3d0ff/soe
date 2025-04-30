@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Prediction</title>
+    <link rel="stylesheet" href="/static/css/root.css">
+    <style>
+        :root {
+            --blue: #1f6aff80;
+            --pink: #ff1fa580;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Consolas', monospace;
+            background: transparent;
+            color: white;
+            font-size: 36px;
+            overflow: hidden;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #prediction {
+            width: 100%;
+            max-width: 900px;
+            margin: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+        }
+        .title {
+            font-family: 'Silkscreen';
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            background-color: #0000003d;
+            padding: 10px 5px;
+            border-radius: 7px;
+            box-shadow: -1px -1px #ffffff30 inset;
+            word-wrap: anywhere;
+        }
+        .outcomes {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .outcome {
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .outcome.blue {
+            background: var(--blue);
+        }
+        .outcome.pink {
+            background: var(--pink);
+        }
+        .outcome.winner {
+            box-shadow: 0 0 36px 2px gold;
+        }
+        .outcome-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .outcome-title {
+            font-family: 'Silkscreen';
+            font-weight: bold;
+            font-size: 0.7em;
+        }
+        .outcome-points {
+            font-size: 0.7em;
+        }
+        .progress-bar {
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            margin-top: 5px;
+        }
+        .progress {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .timer {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 10px;
+            text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        .status {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: bold;
+            text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        .status.locked {
+            color: #ffcb00;
+        }
+        .status.resolved {
+            color: #00ff00;
+        }
+        .status.canceled {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="prediction" class="hidden">
+        <div class="title"></div>
+        <div class="outcomes"></div>
+        <div class="timer"></div>
+        <div class="status"></div>
+    </div>
+
+    <script>
+        // Utility functions
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function calculateTimeLeft(endTime) {
+            const now = new Date().getTime();
+            const end = new Date(endTime).getTime();
+            const timeLeft = Math.max(0, Math.floor((end - now) / 1000));
+            
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function calculatePercentage(points, total) {
+            if (total === 0) return 0;
+            return (points / total * 100).toFixed(1);
+        }
+
+        // WebSocket connection
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        function connectWebSocket() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                console.error('Max reconnection attempts reached');
+                return;
+            }
+
+            ws = new WebSocket(`ws://${window.location.host}/predictionws`);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                reconnectAttempts = 0;
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                setTimeout(() => {
+                    reconnectAttempts++;
+                    connectWebSocket();
+                }, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                updatePrediction(data);
+            };
+        }
+
+        // Update prediction display
+        function updatePrediction(data) {
+            const predictionElement = document.getElementById('prediction');
+            const titleElement = predictionElement.querySelector('.title');
+            const outcomesElement = predictionElement.querySelector('.outcomes');
+            const timerElement = predictionElement.querySelector('.timer');
+            const statusElement = predictionElement.querySelector('.status');
+
+            // Show prediction container
+            predictionElement.classList.remove('hidden');
+
+            // Update title
+            titleElement.textContent = data.title;
+
+            // Calculate total points
+            const totalPoints = data.outcomes.reduce((sum, outcome) => 
+                sum + (outcome.channel_points || 0), 0);
+
+            // Clear and update outcomes
+            outcomesElement.innerHTML = '';
+            data.outcomes.forEach(outcome => {
+                const percentage = calculatePercentage(outcome.channel_points || 0, totalPoints);
+                const isWinner = data.winning_outcome_id === outcome.id;
+
+                const outcomeHtml = `
+                    <div class="outcome ${outcome.color} ${isWinner ? 'winner' : ''}">
+                        <div class="outcome-header">
+                            <span class="outcome-title">${outcome.title}</span>
+                            <span class="outcome-points">
+                                ${outcome.users ? outcome.users + ' 👤 ' : '0 👤 '}
+                                ${outcome.channel_points ? formatNumber(outcome.channel_points) + ' 🪙 ' : '0 🪙 '}
+                            </span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+                outcomesElement.insertAdjacentHTML('beforeend', outcomeHtml);
+            });
+
+            // Update timer or status
+            if (data.status) {
+                // Prediction ended
+                timerElement.classList.add('hidden');
+                statusElement.classList.remove('hidden');
+                statusElement.textContent = data.status.toUpperCase();
+                statusElement.className = `status ${data.status.toLowerCase()}`;
+            } else if (data.locked_at) {
+                // Prediction locked
+                timerElement.classList.add('hidden');
+                statusElement.classList.remove('hidden');
+                statusElement.textContent = 'LOCKED';
+                statusElement.className = 'status locked';
+            } else if (data.locks_at) {
+                // Prediction active
+                timerElement.classList.remove('hidden');
+                statusElement.classList.add('hidden');
+                
+                // Update timer every second
+                const updateTimer = () => {
+                    const timeLeft = calculateTimeLeft(data.locks_at);
+                    timerElement.textContent = `Locks in ${timeLeft}`;
+                    
+                    if (timeLeft !== '0:00') {
+                        setTimeout(updateTimer, 1000);
+                    }
+                };
+                updateTimer();
+            }
+        }
+
+        // Initialize WebSocket connection
+        connectWebSocket();
+    </script>
+</body>
+</html>

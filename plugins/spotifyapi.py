@@ -2,11 +2,9 @@ import logging
 import re
 from functools import wraps
 from spotifio import Client
-from poolguy import TwitchBot
-
+from poolguy import TwitchBot, command, route, rate_limit
 
 logger = logging.getLogger(__name__)
-
 
 def extract_spotify_id(uri_or_url):
     track_pattern = re.compile(r'(?:(?:https?:\/\/)?(?:open\.spotify\.com\/track\/|spotify:track:)([a-zA-Z0-9]+))')
@@ -117,3 +115,13 @@ class SpotifyBot(TwitchBot):
     async def after_login(self):
         self.spotify.token_handler.storage = self.http.storage
         await self.spotify.login()
+
+    @command(name="nowplaying", aliases=["spotify", "song"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def now_playing(self, user, channel, args):
+        now = await self.spotify.get_now_playing()
+        await self.send_chat(f"{now['name']} by {', '.join(now['artists'])} {now['url']}", channel["broadcaster_id"])
+    
+    @route('/spotify/skip')
+    async def spotify_skip(self, request):
+        await self.spotify.skip_track()

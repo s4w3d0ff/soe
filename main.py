@@ -8,7 +8,8 @@ from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, ChatBot,
-    SubathonBot, AIBot, GoalBot, BannedBot, OBSBot
+    SubathonBot, AIBot, GoalBot, BannedBot, OBSBot,
+    PredictionBot
 )
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class MyBot(
         OBSBot, SubathonBot, GoalBot, BannedBot, 
         SpotifyBot, TarkovBot, CommandBot, 
-        ChatBot, TesterBot, UIBot
+        PredictionBot, ChatBot, TesterBot, UIBot
         ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
@@ -55,8 +56,10 @@ class MyBot(
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
+        await self.obsws.hide_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
         await asyncio.sleep(2)
         await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
+        await self.obsws.show_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
 
     async def shutdown(self, reset=True):
         """Gracefully shutdown the bot"""
@@ -118,16 +121,8 @@ class MyBot(
     async def cheers_cmd(self, user, channel, args):
         cfg = loadJSON("db/cheers_cfg.json")
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
-        out = ""
-        for i in each:
-            if len(out)+len(i) > 400:
-                await self.send_chat(out, channel["broadcaster_id"])
-                out = f"{i}"
-            else:
-                out += f"{i}"
-        if len(out) > 0:
-            await self.send_chat(out, channel["broadcaster_id"])
-
+        out = "".join(each)
+        await self.send_chat(out, channel["broadcaster_id"])
 
 if __name__ == '__main__':
     from plugins import alert_objs
