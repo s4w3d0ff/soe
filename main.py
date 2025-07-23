@@ -3,13 +3,15 @@ import os
 import aiofiles
 import logging
 from aiohttp import web
+from plugins.chat import BlackHoleBot
+from plugins.dcord import DiscordBot
 from poolguy.storage import loadJSON
 from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, ChatBot,
     SubathonBot, AIBot, GoalBot, BannedBot, OBSBot,
-    PredictionBot
+    PredictionBot, BlackHoleBot, DiscordBot, TotemBot
 )
 
 logger = logging.getLogger(__name__)
@@ -19,8 +21,9 @@ logger = logging.getLogger(__name__)
 #==========================================================================================
 class MyBot(
         OBSBot, SubathonBot, GoalBot, BannedBot, 
-        SpotifyBot, TarkovBot, CommandBot, 
-        PredictionBot, ChatBot, TesterBot, UIBot
+        SpotifyBot, TarkovBot, CommandBot, BlackHoleBot,
+        PredictionBot, ChatBot, TesterBot, UIBot, DiscordBot, 
+        TotemBot
         ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
@@ -29,16 +32,20 @@ class MyBot(
         spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
         spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
         obsws_password = os.getenv("OBSWS_PASSWORD")
-        if not client_id or not client_secret or not spotify_client_id or not spotify_client_secret:
+        discord_token = os.getenv("DISCORD_TOKEN")
+        if not client_id or not client_secret or not spotify_client_id or not spotify_client_secret or not obsws_password or not discord_token:
             raise ValueError(f"Environment variables are required: {[
-                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 
+                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 'DISCORD_TOKEN',
                 'SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'OBSWS_PASSWORD'
                 ]}")
         kwargs['twitch_config']['client_id'] = client_id
         kwargs['twitch_config']['client_secret'] = client_secret
+        kwargs['twitch_config']['storage'] = "sqlite"
         kwargs['spotify_cfg']['client_id'] = spotify_client_id
         kwargs['spotify_cfg']['client_secret'] = spotify_client_secret
         kwargs['obs_cfg']['password'] = obsws_password
+        kwargs['discord_cfg']['token'] = discord_token
+
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
@@ -48,18 +55,25 @@ class MyBot(
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
             await self.http.server.start()
         await self.eft.start()
+        self.subathon.storage = self.http.storage
+        await self.subathon.init()
         self.subathon.start()
         self.subathon.pause()
         await self.obsws._setup()
         await self.refresh_obs_scenes()
-        
+        await asyncio.sleep(2)
+        self.start_discord_bot()
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
         await self.obsws.hide_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
-        await asyncio.sleep(2)
-        await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
+        await self.obsws.hide_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        await self.obsws.hide_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
+        await asyncio.sleep(5)
         await self.obsws.show_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
+        await self.obsws.show_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        await self.obsws.show_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
+        await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
 
     async def shutdown(self, reset=True):
         """Gracefully shutdown the bot"""
@@ -123,6 +137,7 @@ class MyBot(
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
         out = "".join(each)
         await self.send_chat(out, channel["broadcaster_id"])
+
 
 if __name__ == '__main__':
     from plugins import alert_objs

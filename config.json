@@ -24,7 +24,6 @@
 			"moderator:manage:shoutouts",
 			"moderator:read:followers"
 		],
-		"storage": "json",
 		"browser": {"librewolf": "C:\\Program Files\\LibreWolf\\librewolf.exe"},
 		"channels": {
 			"channel.channel_points_custom_reward_redemption.add": null,
@@ -41,11 +40,12 @@
 			"channel.prediction.lock": null,
 			"channel.prediction.end": null,
 			"channel.hype_train.progress": null,
-			"channel.hype_train.end": null
+			"channel.hype_train.end": null,
+			"stream.online": null
 		},
 		"static_dirs": ["static"]
 	},
-	"obs_cfg":{
+	"obs_cfg": {
 		"host": "localhost",
 		"port": "4455",
 		"ignore_media": ["RustFlashbang", "Sun Spin", "flies", "fire1", "fire2", "fire3", "fire4"],
@@ -62,10 +62,22 @@
 		]
 	},
 	"goals_cfg": {
-		"name": "mygoal",
-		"total": 84000
+		"goals" : {
+			"monthly": 84000,
+			"25 cent meal": 100000,
+			"hooka sesh": 142000,
+			"paint vashtorr": 180000,
+			"desk build": 210000,
+			"moms pesto": 242000
+		},
+		"value_multipliers": {
+			"t1": 250,
+			"t2": 400,
+			"t3": 1200,
+			"bits": 1
+		}
 	},
-	"eft_config":{
+	"eft_config": {
 		"base_log_path": "C:\\Battlestate Games\\Escape from Tarkov\\Logs",
 		"log_names": ["application", "network-connection"]
 	},
@@ -73,12 +85,15 @@
         "time_multiplier": 1,
         "value_multipliers": {
             "bits": 1, 
-            "t1": 260, 
+            "t1": 300, 
             "t2": 480, 
             "t3": 1225,
 			"raids": 15
         }
     },
+	"discord_cfg": {
+		"live_noto_channel": 1280707946925527110
+	},
 	"max_retries": 60,
 	"retry_delay": 10
 }
