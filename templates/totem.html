@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Totem Pole Canvas</title>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; background: transparent; }
+    #totemCanvas { background: transparent; display: block;}
+  </style>
+</head>
+<body>
+  <canvas id="totemCanvas" width="100" height="700"></canvas>
+  <script>
+    // Config
+    const canvas = document.getElementById('totemCanvas');
+    const ctx = canvas.getContext('2d');
+    const CANVAS_WIDTH = canvas.width;
+    const CANVAS_HEIGHT = canvas.height;
+    const MAX_IMAGES = 5;
+    const IMAGE_HEIGHT = 100;
+    const IMAGE_WIDTH = CANVAS_WIDTH;
+    const FALL_SPEED = 4; // px per frame (used for pole slide down)
+    const RADIUS = 16; // rounded corner radius in px
+
+    // Physics for falling image
+    const GRAVITY = 0.7; // px/frame^2
+    const MAX_FALL_SPEED = 15; // px/frame
+
+    // Image stack state
+    let totemImages = []; // [{img, y}]
+    let fallingImage = null; // {img, y, targetY, vy}
+    let poleOffset = 0; // Used for shifting the pole down when popping off the bottom image
+
+    // Simulate websocket (replace with real code)
+    // You should replace this with your actual WebSocket code.
+    function fakeWebSocket(onImageUrl) {
+      const sampleImages = [
+        'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_acd46e12caef4f15ba8a5599787a381a/animated/dark/3.0',
+        'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_acd46e12caef4f15ba8a5599787a381a/animated/dark/3.0',
+        'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_acd46e12caef4f15ba8a5599787a381a/animated/dark/3.0',
+        'https://picsum.photos/300/100?random=4',
+        'https://picsum.photos/300/100?random=5',
+        'https://picsum.photos/300/100?random=6',
+        'https://picsum.photos/300/100?random=7',
+      ];
+      let idx = 0;
+      setInterval(() => {
+        if (idx < sampleImages.length) {
+          onImageUrl(sampleImages[idx]);
+          idx++;
+        }
+      }, 2500);
+    }
+
+    // Load image by url
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    // Handle new image from websocket
+    async function onNewImage(url) {
+      const img = await loadImage(url);
+      // If currently falling, queue after it finishes.
+      if (fallingImage) {
+        // Wait until current image has landed
+        const waitForFall = () => new Promise(r => {
+          const interval = setInterval(() => {
+            if (!fallingImage) {
+              clearInterval(interval);
+              r();
+            }
+          }, 50);
+        });
+        await waitForFall();
+      }
+      // Compute where this image should stop (top of pole or on top of last image)
+      let targetY = CANVAS_HEIGHT - IMAGE_HEIGHT;
+      if (totemImages.length > 0) {
+        const lastY = totemImages[totemImages.length - 1].y;
+        targetY = lastY - IMAGE_HEIGHT;
+      }
+      fallingImage = { img, y: -IMAGE_HEIGHT, targetY, vy: 0 };
+    }
+
+    // Helper: clip rounded rectangle
+    function roundedRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // Animation
+    function draw() {
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // Draw the pole, accounting for offset if popping bottom
+      ctx.save();
+      ctx.translate(0, poleOffset);
+      for (let i = 0; i < totemImages.length; i++) {
+        let { img, y } = totemImages[i];
+        ctx.save();
+        roundedRect(ctx, 0, y, IMAGE_WIDTH, IMAGE_HEIGHT, RADIUS);
+        ctx.clip();
+        ctx.drawImage(img, 0, y, IMAGE_WIDTH, IMAGE_HEIGHT);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // Draw falling image
+      if (fallingImage) {
+        ctx.save();
+        roundedRect(ctx, 0, fallingImage.y, IMAGE_WIDTH, IMAGE_HEIGHT, RADIUS);
+        ctx.clip();
+        ctx.drawImage(fallingImage.img, 0, fallingImage.y, IMAGE_WIDTH, IMAGE_HEIGHT);
+        ctx.restore();
+      }
+    }
+
+    function animate() {
+      // Animate falling image with gravity
+      if (fallingImage) {
+        if (fallingImage.y < fallingImage.targetY) {
+          // Simulate gravity
+          fallingImage.vy = Math.min(fallingImage.vy + GRAVITY, MAX_FALL_SPEED);
+          fallingImage.y += fallingImage.vy;
+          if (fallingImage.y > fallingImage.targetY) {
+            fallingImage.y = fallingImage.targetY;
+          }
+        } else {
+          // Landed! Add to totem stack
+          totemImages.push({ img: fallingImage.img, y: fallingImage.targetY });
+          fallingImage = null;
+          // Check max height
+          if (totemImages.length > MAX_IMAGES) {
+            // Animate entire pole down to remove bottom image
+            poleOffset = 0;
+            let removeHeight = IMAGE_HEIGHT;
+            // Animate down by IMAGE_HEIGHT
+            const slideDown = () => {
+              poleOffset += FALL_SPEED;
+              if (poleOffset >= removeHeight) {
+                // Done, remove bottom image
+                totemImages.shift();
+                // Reset positions
+                for (let i = 0; i < totemImages.length; i++) {
+                  totemImages[i].y += removeHeight;
+                }
+                poleOffset = 0;
+              } else {
+                requestAnimationFrame(slideDown);
+              }
+            };
+            requestAnimationFrame(slideDown);
+          }
+        }
+      }
+
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    // Start everything
+    animate();
+    //fakeWebSocket(onNewImage);
+    function setupWebSocket() {
+      const ws = new WebSocket('ws://' + window.location.host + '/totempolews');
+      ws.onmessage = e => {
+        const url = JSON.parse(e.data).imageUrl;
+        onNewImage(url);
+      };
+
+      ws.onerror = (error) => {
+              console.error('WebSocket Error:', error);
+      };
+
+      ws.onclose = () => {
+              console.log('WebSocket connection closed. Attempting to reconnect...');
+              setTimeout(() => setupWebSocket(), 5000);
+      };
+    }
+    setupWebSocket();
+  </script>
+</body>
+</html>
+
+

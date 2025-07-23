@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2D Gravity Simulation: Balls Orbiting a Black Hole (WebSocket)</title>
+  <style>
+    body {
+      margin: 0;
+      background: transparent;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="myCanvas"></canvas>
+  </div>
+  <script>
+    // --- Config ---
+    const BALL_MIN_RADIUS = 64;
+    const BALL_MAX_RADIUS = 125;
+    const BALL_MIN_MASS = 10;
+    const BALL_MAX_MASS = 100;
+    const BALL_OUTLINE = 'transparent';
+    const BLACK_HOLE_RADIUS = 128;
+    const BLACK_HOLE_COLOR = '#222';
+    const BLACK_HOLE_GLOW = '#2a1d5377';
+
+    // Default physics parameters
+    let G = 1;
+    let BLACK_HOLE_MASS = 50000;
+    let ELASTICITY = 0.05;
+
+    // Velocity removal thresholds
+    const BALL_MIN_ORBIT_VEL = 0.05;    // px/sec, if slower, remove (distant/boring)
+    const BALL_ESCAPE_DIST_FACTOR = 3; // Remove if > 3x diagonal from center
+
+    // DOM
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0, height = 0, cx = 0, cy = 0, maxDistFromCenter = 0;
+
+    // Utility functions
+    function randf(a, b) { return a + Math.random() * (b - a); }
+    function randint(a, b) { return Math.floor(randf(a, b+1)); }
+    function dist2(p1, p2) {
+      let dx = p2.x - p1.x, dy = p2.y - p1.y;
+      return dx*dx + dy*dy;
+    }
+    function dist(p1, p2) {
+      return Math.sqrt(dist2(p1, p2));
+    }
+    function clamp(x, a, b) { return Math.max(a, Math.min(x, b)); }
+    function vecLen(x, y) { return Math.sqrt(x*x + y*y); }
+
+    function resizeCanvas() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        cx = width/2;
+        cy = height/2;
+        gravityFieldRadius = Math.sqrt(width * width + height * height) * 0.5;
+        maxDistFromCenter = Math.sqrt(width * width + height * height) * 0.5 * BALL_ESCAPE_DIST_FACTOR;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Ball class
+    class Ball {
+      constructor(x, y, vx, vy, mass, radius, color, imageURL) {
+        this.x = x; this.y = y;
+        this.vx = vx; this.vy = vy;
+        this.mass = mass;
+        this.radius = radius;
+        this.color = color;
+        this.imageURL = imageURL || null;
+        this.img = null;
+        this.imgLoaded = false;
+        if (imageURL) {
+          this.img = new window.Image();
+          this.img.crossOrigin = "anonymous";
+          this.img.onload = () => { this.imgLoaded = true; };
+          this.img.src = imageURL;
+        }
+        this.id = Math.random() + Date.now();
+      }
+      draw(ctx) {
+        ctx.save();
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.closePath();
+        ctx.clip();
+        if (this.img && this.imgLoaded) {
+          ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius*2, this.radius*2);
+        } else {
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = BALL_OUTLINE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // Balls array
+    let balls = [];
+
+    // Black hole rendering
+    function drawBlackHole() {
+      // Glow
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, BLACK_HOLE_RADIUS*2.8, 0, Math.PI*2);
+      ctx.shadowColor = BLACK_HOLE_GLOW;
+      ctx.shadowBlur = 40;
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = BLACK_HOLE_GLOW;
+      ctx.fill();
+      ctx.restore();
+
+      // Black hole
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, BLACK_HOLE_RADIUS, 0, Math.PI*2);
+      ctx.fillStyle = BLACK_HOLE_COLOR;
+      ctx.shadowColor = '#ddd';
+      ctx.shadowBlur = 9;
+      ctx.globalAlpha = 1.0;
+      ctx.fill();
+      // Event horizon
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#1a237e';
+      ctx.globalAlpha = 0.7;
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+      ctx.restore();
+    }
+
+    // Physics update loop
+    function updateBalls(dt) {
+      // Gravity from black hole and ball-ball gravitational interaction
+      for (let i = 0; i < balls.length; ++i) {
+        let b = balls[i];
+
+        // --- Black hole gravity
+        let dx = cx - b.x;
+        let dy = cy - b.y;
+        let r = Math.sqrt(dx*dx + dy*dy);
+        let rSafe = Math.max(r, BLACK_HOLE_RADIUS + b.radius + 1);
+        if (r > 1) {
+          let F = (G * b.mass * BLACK_HOLE_MASS) / (rSafe*rSafe);
+          let ax = F * dx / rSafe / b.mass;
+          let ay = F * dy / rSafe / b.mass;
+          b.vx += ax * dt;
+          b.vy += ay * dt;
+        }
+
+        // --- Ball-ball gravity
+        for (let j = 0; j < balls.length; ++j) {
+          if (i === j) continue;
+          let o = balls[j];
+          let dx2 = o.x - b.x;
+          let dy2 = o.y - b.y;
+          let d2 = dx2*dx2 + dy2*dy2;
+          let d = Math.sqrt(d2);
+          if (d > 1) {
+            let F2 = (G * b.mass * o.mass) / (d2);
+            let ax2 = F2 * dx2 / d / b.mass;
+            let ay2 = F2 * dy2 / d / b.mass;
+            b.vx += ax2 * dt;
+            b.vy += ay2 * dt;
+          }
+        }
+      }
+
+      // Ball-ball collisions (perfectly elastic, with elasticity slider)
+      for (let i = 0; i < balls.length; ++i) {
+        let a = balls[i];
+        for (let j = i+1; j < balls.length; ++j) {
+          let b = balls[j];
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let d = Math.sqrt(dx*dx + dy*dy);
+          let overlap = a.radius + b.radius - d;
+          if (overlap > 0 && d > 0) {
+            // Move balls apart
+            let nx = dx/d, ny = dy/d;
+            let totalMass = a.mass + b.mass;
+            let moveA = overlap * (b.mass / totalMass);
+            let moveB = overlap * (a.mass / totalMass);
+            a.x -= nx * moveA;
+            a.y -= ny * moveA;
+            b.x += nx * moveB;
+            b.y += ny * moveB;
+            // Elastic collision response
+            let va = {x: a.vx, y: a.vy};
+            let vb = {x: b.vx, y: b.vy};
+            // Relative velocity
+            let rvx = va.x - vb.x, rvy = va.y - vb.y;
+            // Dot product with normal
+            let vrel = rvx * nx + rvy * ny;
+            if (vrel < 0) { // only resolve if moving toward each other
+              let e = ELASTICITY;
+              let j = -(1 + e) * vrel / (1/a.mass + 1/b.mass);
+              let impulseX = j * nx, impulseY = j * ny;
+              a.vx += impulseX / a.mass;
+              a.vy += impulseY / a.mass;
+              b.vx -= impulseX / b.mass;
+              b.vy -= impulseY / b.mass;
+            }
+          }
+        }
+      }
+
+      // Update positions
+      for (let b of balls) {
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+      }
+
+      // Remove balls swallowed by black hole (within event horizon),
+      // or if ejected far away, or if velocity is abnormally high (escaped),
+      // or if velocity is too low (distant, slow orbit)
+      for (let i = balls.length - 1; i >= 0; --i) {
+        let b = balls[i];
+        let d = dist({x: b.x, y: b.y}, {x: cx, y: cy});
+        let v = vecLen(b.vx, b.vy);
+        if (
+          d < BLACK_HOLE_RADIUS * 0.95 ||
+          d > maxDistFromCenter ||
+          v < BALL_MIN_ORBIT_VEL    // Remove if orbiting too slowly (far away, boring)
+        ) {
+          balls.splice(i, 1);
+        }
+      }
+    }
+
+    function drawBalls(ctx) {
+      for (let b of balls) {
+        b.draw(ctx);
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+      drawBlackHole();
+      drawBalls(ctx);
+    }
+
+    // Simple main loop: fixed time step, no interpolation, no alpha blending
+    let lastTime = performance.now();
+    function animate(now) {
+      let dt = (now - lastTime) / 1000;
+      lastTime = now;
+      // Clamp dt to avoid spiral of death
+      dt = Math.min(dt, 0.05);
+      updateBalls(dt * 30); // SPEED UP SIMULATION
+      render();
+      requestAnimationFrame(animate);
+    }
+
+    // -- Ball spawning logic for websocket events --
+    function spawnOrUpdateBallFromWS(ballMsg) {
+      // ballMsg should be: {image: "url", [mass]: number }
+      let image = ballMsg.image;
+      let massDelta = ballMsg.mass || randf(BALL_MIN_MASS, BALL_MAX_MASS);
+
+      // See if ball exists
+      let idx = balls.findIndex(b => b.image === image);
+      if (idx >= 0) {
+        // Ball exists, increment mass and adjust radius accordingly
+        let b = balls[idx];
+        b.mass += massDelta;
+        b.mass = clamp(b.mass, BALL_MIN_MASS, BALL_MAX_MASS);
+        b.radius = clamp(
+          BALL_MIN_RADIUS +
+            ((b.mass - BALL_MIN_MASS) / (BALL_MAX_MASS - BALL_MIN_MASS)) *
+              (BALL_MAX_RADIUS - BALL_MIN_RADIUS),
+          BALL_MIN_RADIUS,
+          BALL_MAX_RADIUS
+        );
+        if (image && b.imageURL !== image) {
+          b.imageURL = image;
+          b.img = new window.Image();
+          b.img.crossOrigin = "anonymous";
+          b.img.onload = () => { b.imgLoaded = true; };
+          b.imgLoaded = false;
+          b.img.src = image;
+        }
+      } else {
+        // Spawn at random orbit
+        const minDim = Math.min(width, height);
+        const safeRadius = minDim * 0.4;
+        let angle = randf(0, 2*Math.PI);
+        let edgeX = cx + Math.cos(angle) * safeRadius;
+        let edgeY = cy + Math.sin(angle) * safeRadius;
+        // Vector from black hole to ball (for orbital speed)
+        let dx = edgeX - cx;
+        let dy = edgeY - cy;
+        let distFromCenter = Math.sqrt(dx*dx + dy*dy);
+        // Calculate orbital velocity
+        let orbitalSpeed = Math.sqrt(G * BLACK_HOLE_MASS / distFromCenter) * randf(0.98, 1.02);
+        // Perpendicular direction
+        let perpAngle = angle + Math.PI / 2;
+        let vx = Math.cos(perpAngle) * orbitalSpeed;
+        let vy = Math.sin(perpAngle) * orbitalSpeed;
+        // Mass and radius
+        let mass = massDelta;
+        let r = clamp(
+          BALL_MIN_RADIUS +
+            ((mass - BALL_MIN_MASS) / (BALL_MAX_MASS - BALL_MIN_MASS)) *
+              (BALL_MAX_RADIUS - BALL_MIN_RADIUS),
+          BALL_MIN_RADIUS,
+          BALL_MAX_RADIUS
+        );
+        let color = `hsl(${randint(185, 230)}, 70%, 60%)`;
+        let ball = new Ball(edgeX, edgeY, vx, vy, mass, r, color, image);
+        balls.push(ball);
+      }
+    }
+
+    // --- No initial balls at startup
+    balls = [];
+
+    // --- Respawn nothing on resize, just reposition
+    window.addEventListener('resize', () => {
+      // just resize, don't spawn balls
+    });
+
+    // --- Start animation loop
+    requestAnimationFrame(animate);
+
+    // --- WebSocket Connection ---
+    (function setupWebSocket() {
+      let ws;
+      let connect = function () {
+        ws = new WebSocket("ws://localhost:5050/blackholews");
+        ws.onopen = function () {
+          console.log("[blackholews] Connected.");
+        };
+        ws.onclose = function (e) {
+          console.log("[blackholews] Closed, retrying in 2s...", e.reason);
+          setTimeout(connect, 2000);
+        };
+        ws.onerror = function (err) {
+          console.error("[blackholews] Error", err);
+          ws.close();
+        };
+        ws.onmessage = function (event) {
+          try {
+            let data = JSON.parse(event.data);
+            // Accept single object or array of objects
+            if (Array.isArray(data)) {
+              for (let ballMsg of data) {
+                spawnOrUpdateBallFromWS(ballMsg);
+              }
+            } else {
+              spawnOrUpdateBallFromWS(data);
+            }
+          } catch (e) {
+            console.warn("Invalid message from websocket", event.data);
+          }
+        };
+      };
+      connect();
+    })();
+  </script>
+</body>
+</html>

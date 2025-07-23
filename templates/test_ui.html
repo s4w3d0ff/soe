@@ -10,14 +10,25 @@
 <body>
     <div class="container">
         <div class="card">
-            <!-- Bits Section -->
-            <h2>channel.bits.use</h2>
+            <!-- TEST Bits Section -->
+            <h2>TEST channel.bits.use</h2>
             <div class="input-group">
                 <input type="number" id="bitsAmount" value="69">
                 <label>Bits</label>
             </div>
             <div class="control-group">
-                <button onclick="testEvent('channel.bits.use')">Send Notification</button>
+                <button onclick="testEvent('channel.bits.use')">Send</button>
+            </div>
+        </div>
+        <div class="card">
+            <!-- INJECT Bits Section -->
+            <h2>INJECT channel.bits.use</h2>
+            <div class="input-group">
+                <input type="number" id="injBitsAmount" value="69">
+                <label>Bits</label>
+            </div>
+            <div class="control-group">
+                <button onclick="injectEvent('channel.bits.use')">Send</button>
             </div>
         </div>
         <div class="card">
