@@ -44,6 +44,11 @@
 		"name": "back flip",
 		"text": "{user} dropped {amount} bits!"
 	},
+	"150": {
+		"source": "warcry",
+		"name": "warcry",
+		"text": "{user} dropped {amount} bits!"
+	},
 	"200": {
 		"source": "danksandboarding",
 		"name": "sandboarding",
@@ -122,6 +127,11 @@
 	"500": {
 		"source": "moneyprinter",
 		"name": "money printer goes brrr",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"777": {
+		"source": "sniff",
+		"name": "sniff ASMR",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"999": {
