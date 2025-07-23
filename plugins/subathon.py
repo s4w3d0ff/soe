@@ -1,10 +1,8 @@
 import time
 import logging
 import asyncio
-import os
 from typing import Callable, Dict, Optional
 from poolguy import TwitchBot, route, command, rate_limit
-from poolguy.storage import loadJSON, saveJSON
 
 logger = logging.getLogger(__name__)
 
@@ -89,35 +87,34 @@ class CountdownTimer:
 class Subathon:
     """Class to manage a Subathon event."""
     def __init__(
-            self, 
-            init_time = None, 
-            time_multiplier = 1.0, 
-            value_multipliers = None, 
-            on_end_callback = None
+            self,
+            init_time=None,
+            time_multiplier=1.0,
+            value_multipliers=None,
+            on_end_callback=None
             ):
-        self._json_file = os.path.join("db", f"subathon.json")
-        if not init_time:
-            try:
-                old = loadJSON(self._json_file)
-            except:
-                old = {"remaining": 3600} # default to 1 hour if no init time is provided
-            init_time = old["remaining"]
-        self.timer = CountdownTimer(seconds=init_time, on_end_callback=on_end_callback or self.on_timer_end)
-        self.time_multiplier: float = time_multiplier
-        self.value_multipliers: Dict[str, float] = value_multipliers or {"bits": 1, "t1": 250, "t2": 400, "t3": 1200}
+        self.storage = None
         self._last_stat_check: float = 0.0
-        
+        self.time_multiplier: float = time_multiplier
+        self.value_multipliers: Dict[str, float] = value_multipliers or {"bits": 1, "t1": 250, "t2": 400, "t3": 1200, "raids": 100}
+        self.timer = None
+        self.on_end_callback = on_end_callback or self.on_timer_end
+        # Initialization deferred, because we need async for loading
+        self._init_time = init_time
+
+    async def init(self):
+        """Async initialization to load from the database if needed."""
+        if self._init_time:
+            init_time = self._init_time
+        if not self._init_time:
+            old = await self.storage.load_token("subathon")
+            init_time = old["remaining"] if old and "remaining" in old else 3600
+        self.timer = CountdownTimer(seconds=init_time, on_end_callback=self.on_end_callback)
 
     async def on_timer_end(self):
-        """
-        Default callback for when the timer ends.
-        You can overwrite this method in a subclass or 'on_end_callback' parameter will overwrite this method.
-        """
         logger.info("The subathon has ended.")
-        # Add any additional logic you want to execute when the subathon ends here.
 
-    def get_stats(self):
-        """Get the current stats of the subathon."""
+    async def get_stats(self):
         stats = {
             "remaining": self.timer.remaining_time,
             "bits": self.value_multipliers["bits"] * self.time_multiplier,
@@ -126,52 +123,37 @@ class Subathon:
             "t3": self.value_multipliers["t3"] * self.time_multiplier,
             "raids": self.value_multipliers["raids"] * self.time_multiplier
         }
-        # Save stats to JSON file every 15 seconds
-        if self._json_file and time.time() - self._last_stat_check > 5:
+        # Save stats to SQLite every 15 seconds
+        if time.time() - self._last_stat_check > 15:
             self._last_stat_check = time.time()
-            saveJSON(stats, self._json_file)
+            await self.storage.save_token(stats, "subathon")
         return stats
 
     def get_time_left(self):
-        """Get the time left in the countdown."""
         return self.timer.remaining_time
 
     def add_time(self, amount, multiplier=None):
-        """Add time to the countdown based on the given multiplier."""
-        if multiplier:
-            seconds = amount * self.value_multipliers[multiplier] * self.time_multiplier
-        else:
-            seconds = amount
+        seconds = amount * self.value_multipliers[multiplier] * self.time_multiplier if multiplier else amount
         self.timer.add_time(seconds)
 
     def remove_time(self, amount, multiplier=None):
-        """Remove time from the countdown based on the given multiplier."""
-        if multiplier:
-            seconds = amount * self.value_multipliers[multiplier] * self.time_multiplier
-        else:
-            seconds = amount
+        seconds = amount * self.value_multipliers[multiplier] * self.time_multiplier if multiplier else amount
         self.timer.remove_time(seconds)
 
     def start(self):
-        """Start the countdown timer."""
         self.timer.start()
 
     def shutdown(self):
-        """Shutdown the countdown timer."""
         self.timer.shutdown()
 
     def pause(self):
-        """Pause the countdown timer."""
         self.timer.pause()
 
     def resume(self):
-        """Resume the paused countdown timer."""
         self.timer.unpause()
-    
-    def is_running(self):
-        """Check if the subathon timer is running."""
-        return self.timer._running
 
+    def is_running(self):
+        return self.timer._running
 
 
 #==========================================================================================
@@ -183,6 +165,8 @@ class SubathonBot(TwitchBot):
         self.subathon = Subathon(**subathon_cfg)
 
     async def after_login(self):
+        self.subathon.storage = self.http.storage
+        await self.subathon.init()
         self.subathon.start()
         self.subathon.pause()
 
@@ -197,16 +181,16 @@ class SubathonBot(TwitchBot):
     @route('/subathon/pause', method='GET')
     async def subathon_pause(self, request):
         self.subathon.pause()
-        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": await self.subathon.get_stats()})
     
     @route('/subathon/resume', method='GET')
     async def subathon_resume(self, request):
         self.subathon.resume()
-        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": await self.subathon.get_stats()})
     
     @route('/subathon/stats', method='GET')
     async def subathon_stats(self, request):
-        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": await self.subathon.get_stats()})
 
     @route('/subathon/addtime', method='POST')
     async def subathon_addtime(self, request):
@@ -214,7 +198,7 @@ class SubathonBot(TwitchBot):
         if "amount" not in data:
             return self.app.response_json({"status": False, "data": data})
         self.subathon.add_time(amount=data["amount"], multiplier=data.get("multiplier", None))
-        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": await self.subathon.get_stats()})
 
     @route('/subathon/removetime', method='POST')
     async def subathon_removetime(self, request):
@@ -222,7 +206,7 @@ class SubathonBot(TwitchBot):
         if "amount" not in data:
             return self.app.response_json({"status": False, "data": data})
         self.subathon.remove_time(amount=data["amount"], multiplier=data.get("multiplier", None))
-        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": await self.subathon.get_stats()})
 
     @route('/subathon/new/{init_time}', method='POST')
     async def subathon_new(self, request):
@@ -235,8 +219,10 @@ class SubathonBot(TwitchBot):
         logger.info(f"Starting new subathon with {cfg}")
         self.subathon.shutdown()
         self.subathon = Subathon(**cfg)
+        self.subathon.storage = self.http.storage
+        await self.subathon.init()
         self.subathon.start()
-        return self.app.response_json({"status": True, "data": self.subathon.get_stats()})
+        return self.app.response_json({"status": True, "data": await self.subathon.get_stats()})
 
     @command(name="subathon", aliases=["streamathon, eggathon"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)

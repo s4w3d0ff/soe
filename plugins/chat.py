@@ -11,6 +11,8 @@ emoteEndpoint = "https://static-cdn.jtvnw.net/emoticons/v2/"
 sevenTVcdnurl = "https://cdn.7tv.app/emote/"
 sevenTVurl = "https://7tv.io/v3/"
 
+ball_mass = 10
+
 #==========================================================================================
 # ChatBot ===============================================================================
 #==========================================================================================
@@ -54,10 +56,7 @@ class ChatBot(TwitchBot):
     @websocket('/chatws')
     async def chat_ws(self, ws, request):
         logger.warning(f"Websocket connected: chatws")
-        while not self.http.user_id:
-            logger.error(f"chatws error: not logged in yet")
-            await ws.ping()
-            await asyncio.sleep(10)
+        await self.ws_wait_for_twitch_login(ws)
         while not ws.closed:
             try:
                 await ws.send_json(self.chat_history)
@@ -72,27 +71,38 @@ class ChatBot(TwitchBot):
         return await self.app.response_html('templates/chat.html')
 
 
+class BlackHoleBot(TwitchBot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.blackhole_queue = asyncio.Queue()
+
+    @websocket('/blackholews')
+    async def blackhole_ws(self, ws, request):
+        logger.warning("Blackhole websocket connected")
+        await self.ws_wait_for_twitch_login(ws)
+        while not ws.closed:
+            try:
+                update = await asyncio.wait_for(self.blackhole_queue.get(), timeout=15)
+                await ws.send_json(update)
+                self.blackhole_queue.task_done()
+            except asyncio.TimeoutError:
+               await ws.ping()
+               continue
+            except Exception as e:
+                logger.error(f"Unexpected error in blackholews loop: {e}")
+                break
+        logger.warning("Blackhole websocket connection closed")
+    
+    @route('/blackhole')
+    async def blackhole(self, request):
+        return await self.app.response_html('templates/blackhole.html')
+
 ############################=========---------
 ### channel.chat.message ###=============---------
 ############################=================---------
 class ChannelChatMessage(Alert):
     queue_skip = True
     store = False
-
-    async def parseTTVEmote(self, id, format, theme_mode="dark", scale="3.0"):
-        """Parse a TTV emote and return the HTML tag for it."""
-        return f'<img class="emote" src="{emoteEndpoint}{id}/{format}/{theme_mode}/{scale}">'
-
-    async def parse7TVEmotes(self, text):
-        """Parse 7TV emotes from text and replace them with HTML tags."""
-        bid = self.data['source_broadcaster_user_id'] or self.data['broadcaster_user_id']
-        for name, url in self.bot.emotes[f'7tv_global'].items():
-            text = re.sub(r'\b' + re.escape(name) + r'\b', f'<img class="emote" src="{url}">', text)
-        if f'7tv_{bid}' not in self.bot.emotes:
-            self.bot.emotes[f'7tv_{bid}'] = await self.bot.get7tvEmotes(bid)
-        for name, url in self.bot.emotes[f'7tv_{bid}'].items():
-            text = re.sub(r'\b' + re.escape(name) + r'\b', f'<img class="emote" src="{url}">', text)
-        return text
 
     async def parseBadges(self):
         bid = self.data['source_broadcaster_user_id'] or self.data['broadcaster_user_id']
@@ -105,30 +115,75 @@ class ChannelChatMessage(Alert):
             badges.append(f'<img class="badge" src="{self.bot.badges[badge['set_id']][badge['id']]}">')
         return badges
 
-    async def parseEmotesText(self):
-        text = self.data['message']['text']
-        for f in self.data['message']['fragments']:
-            if f['type'] == 'emote':
-                text = re.sub(
-                    r'\b'+re.escape(f['text'])+r'\b', 
-                    await self.parseTTVEmote(f['emote']['id'], 'animated' if 'animated' in f['emote']['format'] else 'static'), 
-                    text)
-        text = await self.parse7TVEmotes(text)
-        return text
+    async def parseTTVUrl(self, id, format, theme_mode="dark", scale="3.0"):
+        return f'{emoteEndpoint}{id}/{format}/{theme_mode}/{scale}'
+    
+    async def split_text_with_7TVemotes(self, text, bid):
+        if f'7tv_{bid}' not in self.bot.emotes:
+            self.bot.emotes[f'7tv_{bid}'] = await self.bot.get7tvEmotes(bid)
+        emotes = {**self.bot.emotes[f'7tv_{bid}'], **self.bot.emotes['7tv_global']}
+        pattern = r'\b(' + '|'.join(map(re.escape, emotes.keys())) + r')\b'
+        result = []
+        last_end = 0
+        # Iterate over all matches
+        for match in re.finditer(pattern, text):
+            start, end = match.span()
+            emote_name = match.group(1)
+            # Add text before the emote (if any)
+            if start > last_end:
+                result.append({"text": text[last_end:start], "type": "text"})
+            # Add the emote URL
+            result.append({"url": emotes[emote_name], "type": "emote"})
+            last_end = end
 
+        # Add any remaining text after the last emote
+        if last_end < len(text):
+            result.append({"text": text[last_end:], "type": "text"})
+
+        return result
+    
     async def process(self):
         logger.info(f'[Chat] {self.data["chatter_user_name"]}: {self.data["message"]["text"]}')
         await self.bot.command_check(self.data)
+
+        message = {
+            "fragments": [],
+            'user': self.data['chatter_user_name'],
+            'user_id': self.data['chatter_user_id'],
+            'color': self.data['color'] or "#32b5c5c",
+            'badges': await self.parseBadges(),
+            'text': self.data["message"]["text"],
+            'timestamp': self.timestamp
+        }
+
+        for frag in self.data['message']['fragments']:
+            # Check if the fragment is a twitch emote
+            if frag['type'] == 'emote':
+                message["fragments"].append({
+                    "url": await self.parseTTVUrl(
+                        frag['emote']['id'], 
+                        'animated' if 'animated' in frag['emote']['format'] else 'static'),
+                    "type": 'emote',
+                })
+            # Check other fragments for 7TV emotes
+            else:
+                bid = self.data['source_broadcaster_user_id'] or self.data['broadcaster_user_id']
+                text = frag["text"]
+                subfrag = await self.split_text_with_7TVemotes(text, bid)
+                for sf in subfrag:
+                    message["fragments"].append(sf)
+
+
+        if hasattr(self.bot, "blackhole_queue"):
+            for frag in message["fragments"]:
+                if frag['type'] == 'emote':
+                    await self.bot.blackhole_queue.put({
+                        "image": frag["url"],
+                        "mass": ball_mass
+                    })
         if hasattr(self.bot, 'chat_history'):
-            out = {
-                'user': self.data['chatter_user_name'],
-                'user_id': self.data['chatter_user_id'],
-                'color': self.data['color'] or "#32b5c5c",
-                'badges': await self.parseBadges(),
-                'text': await self.parseEmotesText(),
-                'timestamp': self.timestamp
-                }
-            self.bot.chat_history[self.data['message_id']] = out
+            self.bot.chat_history[self.data['message_id']] = message
+
 
 ###################################=========---------
 ### channel.chat.message_delete ###=============---------

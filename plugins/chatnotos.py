@@ -26,12 +26,11 @@ class SubNoto(Alert):
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        sys_message = self.data['system_message']
+        #sys_message = self.data['system_message']
         event = self.data[notice_type]
         tier = int(event['sub_tier'][0])
-        is_prime = event['is_prime']
-        duration = event['duration_months']
-        is_gift = event['is_gift']
+        #is_prime = event['is_prime']
+        #duration = event['duration_months']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(1, f't{tier}')
@@ -61,13 +60,15 @@ class ResubNoto(Alert):
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        sys_message = self.data['system_message']
+        #sys_message = self.data['system_message']
         event = self.data[notice_type]
+        #cumulative_months = event['cumulative_months']
+        #duration_months = event['duration_months']
+        #streak_months = event['streak_months']
         tier = int(event['sub_tier'][0])
         total = event['cumulative_months']
-        streak = event['streak_months']
-        is_prime = event['is_prime']
-        is_gift = event['is_gift']
+        #is_prime = event['is_prime']
+        #is_gift = event['is_gift']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(1, f't{tier}')
@@ -99,18 +100,19 @@ class GiftsubNoto(Alert):
         self._source = "reallynice"
 
     @duck_volume(volume=30)
-    async def _process(self):
+    async def _process(self, event):
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        event = self.data[self.data['notice_type']]
         tier = event['sub_tier'][0]
         duration = event['duration_months']
+        #cumulative_total = event['cumulative_total']
+        recipient_user_name = event['recipient_user_name']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(1, f't{tier}')
         if hasattr(self.bot, 'obsws'):
             await self.bot.obsws.set_source_text(
                     self._text, 
-                    f" {name} gifted {event['recipient_user_name']} a sub{' for '+str(duration)+' months in advance' if duration > 1 else '' }! \n-tier {tier}-"
+                    f" {name} gifted {recipient_user_name} a tier {tier} sub{' for '+str(duration)+' months in advance' if duration > 1 else '' }!"
                 )
             for a in self._altscenes:
                 await self.bot.obsws.show_source(a, self._scene)
@@ -123,7 +125,7 @@ class GiftsubNoto(Alert):
         event = self.data[self.data['notice_type']]
         if event["community_gift_id"]:
             return
-        await self._process()
+        await self._process(event)
 
 class CommunitygiftsubNoto(Alert):
     queue_skip = False
@@ -140,10 +142,11 @@ class CommunitygiftsubNoto(Alert):
     async def process(self):
         notice_type = self.data['notice_type']
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        sys_message = self.data['system_message']
+        #sys_message = self.data['system_message']
         event = self.data[notice_type]
         tier = event['sub_tier'][0]
         total = event['total']
+        #cumulative_total = event['cumulative_total']
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(total, f't{tier}')
@@ -294,6 +297,7 @@ class RaidNoto(Alert):
             await self.bot.obsws.set_source_text(self._text, "")
             for a in self._altscenes:
                 await self.bot.obsws.hide_source(a, self._scene)
+        #await self.bot.http.sendShoutout(to_broadcaster_id=event['user_id'])
 
 
 class ChannelChatNotification(Alert):

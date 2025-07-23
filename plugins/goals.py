@@ -1,95 +1,112 @@
 import asyncio
-import os
 import json
 import time
 import logging
 from datetime import datetime, timedelta
-from poolguy.storage import aioLoadJSON
 from poolguy import TwitchBot, Alert, route, websocket
 
 logger = logging.getLogger(__name__)
 
-#==========================================================================================
-# GoalBot =================================================================================
-#==========================================================================================
 class GoalBot(TwitchBot):
-    def __init__(self, goals_cfg, *args, **kwargs):
+    def __init__(self, goals_cfg={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.goals_cfg = goals_cfg
         self.goal_queue = asyncio.Queue()
-    
-    async def get_total_cheers(self, days_back=30, base_dir='db/alerts/channel.cheer'):
-        current_date = datetime.now()
-        earliest_date = current_date - timedelta(days=days_back)
-        total_bits = 0
-        current = current_date
-        while current >= earliest_date:
-            date_str = current.strftime('%Y-%m-%d')
-            file_path = os.path.join(base_dir, f'{date_str}.json')
-            if os.path.exists(file_path):
-                try:
-                    data = await aioLoadJSON(file_path)
-                    for cheer in data.values():
-                        if isinstance(cheer, dict) and 'bits' in cheer:
-                            total_bits += cheer['bits']
-                except (json.JSONDecodeError, IOError) as e:
-                    print(f"Error reading {file_path}: {e}")
-            current = current - timedelta(days=1)
-        return total_bits
-        
-    async def send_current_bits_amount(self, ws):
-        bits = await self.get_total_cheers(base_dir='db/alerts/channel.bits.use')
-        out = {
-            "progress_type": "bits",
-            "amount": bits
-        }
-        logger.debug(f"send_current_bits_amount: {out}")
-        await ws.send_json(out)
+        self.multi = goals_cfg.get("value_multipliers", {"t1": 250, "t2": 420, "t3": 2400, "bits": 1})
+        self.goals = goals_cfg.get("goals", {"monthly": 6942069})
+        self.bits_total = 0
+        self.subs_total = {}
+        self.last_sub_update = 0
 
-    async def send_subgoal_update(self, ws):
+    async def get_total_cheers(self, days_back=30):
+        now = datetime.now()
+        earliest = now - timedelta(days=days_back)
+        alerts = await self.storage.load_alerts('channel.bits.use', date=earliest)
+        total_bits = 0
+        for alert in alerts:
+            total_bits += int(alerts[alert]['bits']) if 'bits' in alerts[alert] else 0
+        return total_bits * self.multi["bits"]
+
+    async def get_total_subs(self):
         data = await self.http.getBroadcasterSubscriptions()
-        out = {'t1': 0, 't2': 0, 't3': 0}
+        self.last_sub_update = time.time()
+        s = {'t1': 0, 't2': 0, 't3': 0}
         for i in data:
             if i['user_id'] == self.http.user_id:
+                # skip own subscription
                 continue
-            out[f"t{i['tier'][0]}"] += 1
+            s[f"t{i['tier'][0]}"] += 1
+        out = {}
+        for teir, value in s.items():
+            out[teir] = value * self.multi[teir]
+        return out
 
-        for tier, value in out.items():
-            await asyncio.sleep(0.5)
-            o = {
-                "progress_type": tier,
-                "amount": value
+    def calculate_goals(self, current_total, bits_total, subs_total):
+        out = {
+            "bits_total": bits_total,
+            "subs_total": subs_total,
+            "current_total": current_total,
+            "goals": []
+        }
+        for goal_name, goal_total in self.goals.items():
+            t = {
+                "goal_name": goal_name,
+                "goal_total": goal_total,
+                "percent_complete": (current_total / goal_total) * 100,
+                "total_needed": goal_total - current_total,
+                "bits_total_needed": goal_total - current_total
             }
-            logger.debug(f"send_subgoal_update: {o}")
-            await ws.send_json(o)
-            
+            for tier, amount in subs_total.items():
+                t[f"{tier}_total_needed"] = int((goal_total - current_total) / self.multi[tier])
+            out["goals"].append(t)
+        return out
+
+    async def send_update(self, ws, update_type):
+        if update_type == "subscription_count":
+            if time.time()-self.last_sub_update >= 30:
+                self.subs_total = await self.get_total_subs()
+        else:
+            self.bits_total = await self.get_total_cheers()
+        out = self.calculate_goals(
+            self.bits_total + sum([v for v in self.subs_total.values()]), 
+            self.bits_total, 
+            self.subs_total
+        )
+        await ws.send_json(out)
+
     @websocket('/goalsws')
-    async def goals2ws(self, ws, request):
+    async def goalsws(self, ws, request):
         logger.warning(f"Websocket connected: goalsws")
-        while not self.http.user_id:
-            logger.error(f"goalsws error: not logged in yet")
-            await ws.ping()
-            await asyncio.sleep(10)
-            
-        await ws.send_json({
-            "progress_type": "total",
-            "amount": self.goals_cfg['total']
-        })
-        await self.send_subgoal_update(ws)
-        await self.send_current_bits_amount(ws)
+        await self.ws_wait_for_twitch_login(ws)
+        await self.send_update(ws, "subscription_count")
+        await asyncio.sleep(2.5)
+        await self.send_update(ws, "bits")
+        await asyncio.sleep(5.5)
         
-        last_sub_update = time.time()
         while not ws.closed:
             try:
                 update = await asyncio.wait_for(self.goal_queue.get(), timeout=15)
-                if update['gtype'] in ["", "new_bit", "new_bits"]:
-                    await asyncio.sleep(5)
-                    await self.send_current_bits_amount(ws)
-                if update['gtype'] == "subscription_count":
-                    if time.time()-last_sub_update >= 120:
-                        await asyncio.sleep(5)
-                        await self.send_subgoal_update(ws)
-                        last_sub_update = time.time()
+                await self.send_update(ws, update['gtype'])
+                """
+                {
+                    "bits_total": int,
+                    "subs_total": {
+                        "t1": int,
+                        "t2": int,
+                        "t3": int
+                    },
+                    "current_total": int,
+                    "goals": [{
+                        "goal_name": str,
+                        "goal_total": int,
+                        "percent_complete": int,
+                        "total_needed": int,
+                        "bits_total_needed": int,
+                        "t1_total_needed": int,
+                        "t2_total_needed": int,
+                        "t3_total_needed": int
+                        }]
+                }
+                """
                 self.goal_queue.task_done()
             except asyncio.TimeoutError:
                 await ws.ping()
@@ -100,12 +117,10 @@ class GoalBot(TwitchBot):
         logger.warning("goalsws connection closed")
 
     @route('/goals')
-    async def goals(self, request):
+    async def goalsroute(self, request):
         return await self.app.response_html('templates/goals.html')
 
-#############################=========---------
-### channel.goal.progress ###=============---------
-#############################=================---------
+
 class ChannelGoalProgress(Alert):
     queue_skip = True
     store = False

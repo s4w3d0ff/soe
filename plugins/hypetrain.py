@@ -6,9 +6,9 @@ logger = logging.getLogger(__name__)
 hype_scene = "[S] Dumpster Chat"
 hype_cfg = {
     "1": "fire1",
-    "2": "fire2",
-    "3": "fire3",
-    "4": "fire4"
+    "5": "fire2",
+    "10": "fire3",
+    "15": "fire4"
     }
 
 ###################################=========---------
