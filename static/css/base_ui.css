@@ -1,46 +1,4 @@
-@font-face {
-    font-family: 'Silkscreen';
-    src: url('/static/fonts/Silkscreen-Regular.ttf') format('truetype');
-}
-@font-face {
-    font-family: 'Silkscreen Bold';
-    src: url('/static/fonts/Silkscreen-Bold.ttf') format('truetype');
-}
-@font-face {
-    font-family: 'BebasNeue';
-    src: url('/static/fonts/BebasNeue-Regular.ttf') format('truetype');
-}
-@font-face {
-    font-family: 'AdvancedPixelLcd';
-    src: url('/static/fonts/AdvancedPixelLcd-Regular.ttf') format('truetype');
-}
-
-::-webkit-scrollbar {
-    width: 3px;               /* width of vertical scrollbar */
-    height: 3px;              /* height of horizontal scrollbar */
-}
-
-/* Track (background) of the scrollbar */
-::-webkit-scrollbar-track {
-    background: #2b2b2b;    /* dark background for track */
-}
-
-/* Handle (thumb) of the scrollbar */
-::-webkit-scrollbar-thumb {
-    background: #666;       /* darker grey for the handle */
-    border-radius: 4px;       /* rounded corners */
-}
-
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-    background: #888;       /* slightly lighter on hover */
-}
-
-/* For Firefox */
-* {
-    scrollbar-width: thin;    /* "auto" or "thin" */
-    scrollbar-color: #666 #2b2b2b;  /* thumb and track color */
-}
+@import "root.css";
 
 :root {
     --bg-color: #1a1a1a;
@@ -211,8 +169,6 @@ button:hover {
     background: #e74d3c22;
     color: var(--text-color);
 }
-
-
 
 .section-divider {
     border-top: 1px solid var(--input-border-color);
