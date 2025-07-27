@@ -49,7 +49,7 @@ h2 {
         function scrollOnce() {
             var currentTop = parseInt(creditsDiv.style.top);
             if (!scrolled && currentTop > -divHeight) {
-                creditsDiv.style.top = (currentTop - 3) + 'px';
+                creditsDiv.style.top = (currentTop - 5) + 'px';
                 requestAnimationFrame(scrollOnce);
             } else {
 				creditsDiv.style.top = windowHeight + 'px';

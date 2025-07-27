@@ -144,10 +144,8 @@
             return stats.join('');
         }
 
-        async function updateDisplay() {
+        async function updateDisplay(data) {
             try {
-                const response = await fetch('/subathon/stats');
-                const data = await response.json();
                 
                 if (data.status && data.data.remaining !== undefined) {
                     // Update timer
@@ -174,10 +172,36 @@
                 console.error('Error fetching data:', error);
             }
         }
+        // WebSocket connection
+        function connectWebSocket() {
+            const ws = new WebSocket('ws://localhost:5050/subathonws');
 
-        // Update immediately and then every second
-        updateDisplay();
-        setInterval(updateDisplay, 1000);
+            ws.onopen = function() {
+                console.log('Connected to chat websocket');
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    updateDisplay(data);
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                }
+            };
+
+            ws.onclose = function() {
+                console.log('Disconnected from chat websocket');
+                // Attempt to reconnect after a delay
+                setTimeout(connectWebSocket, 2000);
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Start WebSocket connection
+        connectWebSocket();
     </script>
 </body>
 </html>
