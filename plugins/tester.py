@@ -178,8 +178,17 @@ test_payloads = {
 }
 
 def test_meta_data():
+    """Prefixed with test_ to avoid storage conflicts with actual data"""
     return {
             "message_id": 'test_'+randString(),
+            "message_type": "notification",
+            "message_timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+def injected_meta_data():
+    """Used to fix missed notofications and need the data saved in the database"""
+    return {
+            "message_id": 'inject_'+randString(),
             "message_type": "notification",
             "message_timestamp": datetime.now(timezone.utc).isoformat()
     }
@@ -200,37 +209,37 @@ class TesterBot(TwitchBot):
                 payload = test_payloads.get("channel.raid").copy()
                 payload["event"]["viewer_count"] = int(args.get("viewer_count", 1))
                 payload["event"]["from_broadcaster_user_name"] = args.get("from", "Cool_User")
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.cheer":
                 payload = test_payloads.get("channel.cheer").copy()
                 payload["event"]["bits"] = int(args.get("bits", 1))
                 payload["event"]["is_anonymous"] = args.get("anon", False)
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.bits.use":
                 payload = test_payloads.get("channel.bits.use").copy()
                 payload["event"]["bits"] = int(args.get("bits", 1))
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.goal.progress":
                 payload = test_payloads.get("channel.goal.progress").copy()
                 payload["event"]["type"] = args.get("type", "bits")
                 payload["event"]["current_amount"] = int(args.get("current", 0))
                 payload["event"]["target_amount"] = int(args.get("target", 100))
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.hype_train.progress":
                 payload = test_payloads.get("channel.hype_train.progress").copy()
                 payload["event"]["level"] = int(args.get("level", 1))
                 payload["event"]["total_contributions"] = int(args.get("total", 100))
                 payload["event"]["progress"] = int(args.get("progress", 50))
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.hype_train.end":
                 payload = test_payloads.get("channel.hype_train.end").copy()
                 payload["event"]["level"] = int(args.get("level", 1))
                 payload["event"]["total"] = int(args.get("total", 100))
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.follow":
                 payload = test_payloads.get("channel.follow").copy()
                 payload["event"]["user_name"] = args.get("user_name", "cool_user")
-                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload})
+                await self.ws.handle_message({"metadata": test_meta_data(), "payload": payload.copy()})
             case "channel.chat.notification":
                 payload = test_payloads.get("channel.chat.notification").copy()
                 notice_type = ""
@@ -322,4 +331,20 @@ class TesterBot(TwitchBot):
             case _:
                 raise ValueError(f"Unknown event type: {cmd}")
         
+        return self.app.response_json({"status": True})
+
+
+    @route('/inject/{cmd}/', method='POST')
+    async def inject(self, request):
+        cmd = request.match_info['cmd']
+        args = await request.json()
+        logger.info(f"/inject/{cmd}, {args = }")
+        payload = {}
+        match cmd:
+            case "channel.bits.use":
+                payload = test_payloads.get("channel.bits.use").copy()
+                payload["event"]["bits"] = int(args.get("bits", 1))
+                await self.ws.handle_message({"metadata": injected_meta_data(), "payload": payload.copy()})
+            case _:
+                raise ValueError(f"Unknown event type: {cmd}")
         return self.app.response_json({"status": True})

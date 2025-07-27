@@ -2,14 +2,16 @@ import asyncio
 import os
 import aiofiles
 import logging
-from aiohttp import web
+from aiohttp import web, ClientSession
+from plugins.chat import BlackHoleBot
+from plugins.dcord import DiscordBot
 from poolguy.storage import loadJSON
 from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, ChatBot,
-    SubathonBot, AIBot, GoalBot, BannedBot, OBSBot,
-    PredictionBot
+    SubathonBot, AIBot, GoalBot, OBSBot,
+    PredictionBot, BlackHoleBot, DiscordBot, TotemBot
 )
 
 logger = logging.getLogger(__name__)
@@ -18,9 +20,10 @@ logger = logging.getLogger(__name__)
 # MainBot =================================================================================
 #==========================================================================================
 class MyBot(
-        OBSBot, SubathonBot, GoalBot, BannedBot, 
-        SpotifyBot, TarkovBot, CommandBot, 
-        PredictionBot, ChatBot, TesterBot, UIBot
+        OBSBot, SubathonBot, GoalBot, 
+        SpotifyBot, TarkovBot, CommandBot, BlackHoleBot,
+        PredictionBot, ChatBot, TesterBot, UIBot, DiscordBot, 
+        TotemBot
         ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
@@ -29,16 +32,20 @@ class MyBot(
         spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
         spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
         obsws_password = os.getenv("OBSWS_PASSWORD")
-        if not client_id or not client_secret or not spotify_client_id or not spotify_client_secret:
+        discord_token = os.getenv("DISCORD_TOKEN")
+        if not client_id or not client_secret or not spotify_client_id or not spotify_client_secret or not obsws_password or not discord_token:
             raise ValueError(f"Environment variables are required: {[
-                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 
+                'SOE_CLIENT_ID', 'SOE_CLIENT_SECRET', 'DISCORD_TOKEN',
                 'SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'OBSWS_PASSWORD'
                 ]}")
         kwargs['twitch_config']['client_id'] = client_id
         kwargs['twitch_config']['client_secret'] = client_secret
+        kwargs['twitch_config']['storage'] = "sqlite"
         kwargs['spotify_cfg']['client_id'] = spotify_client_id
         kwargs['spotify_cfg']['client_secret'] = spotify_client_secret
         kwargs['obs_cfg']['password'] = obsws_password
+        kwargs['discord_cfg']['token'] = discord_token
+
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
@@ -48,18 +55,25 @@ class MyBot(
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
             await self.http.server.start()
         await self.eft.start()
+        self.subathon.storage = self.http.storage
+        await self.subathon.init()
         self.subathon.start()
         self.subathon.pause()
         await self.obsws._setup()
+        await asyncio.sleep(2)
         await self.refresh_obs_scenes()
-        
+        self.start_discord_bot()
 
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
         await self.obsws.hide_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
+        await self.obsws.hide_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        await self.obsws.hide_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
         await asyncio.sleep(2)
-        await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
         await self.obsws.show_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
+        await self.obsws.show_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        await self.obsws.show_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
+        await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
 
     async def shutdown(self, reset=True):
         """Gracefully shutdown the bot"""
@@ -86,6 +100,54 @@ class MyBot(
                 continue
             out['t' + i['tier'][0]].append(i["user_name"])
         return out
+    
+    async def get_api_call(self, url, json=True):
+        async with ClientSession() as session:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                if json:
+                    return await response.json()
+                return await response.text()
+    
+    @command(name="chuck", aliases=["norris"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def chuck_cmd(self, user, channel, args):
+        joke = await self.get_api_call("https://api.chucknorris.io/jokes/random")
+        await self.send_chat(joke["value"], channel["broadcaster_id"])
+
+    @command(name="dad", aliases=["joke"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def dad_cmd(self, user, channel, args):
+        joke = await self.get_api_call("https://icanhazdadjoke.com/slack")
+        await self.send_chat(joke["attachments"][0]["text"], channel["broadcaster_id"])
+
+    @command(name="insult", aliases=["fu", "fuckoff", "shutup", "asshole", "idiot"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def insult_cmd(self, user, channel, args):
+        joke = await self.get_api_call("https://insult.mattbas.org/api/insult", json=False)
+        await self.send_chat(joke, channel["broadcaster_id"])
+
+    @command(name="meat", aliases=["beef"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def meat_cmd(self, user, channel, args):
+        joke = await self.get_api_call("https://baconipsum.com/api/?type=all-meat&sentences=1")
+        await self.send_chat(joke[0], channel["broadcaster_id"])
+
+    @command(name="ron", aliases=["swanson"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def ron_cmd(self, user, channel, args):
+        joke = await self.get_api_call("http://ron-swanson-quotes.herokuapp.com/v2/quotes")
+        await self.send_chat(joke[0], channel["broadcaster_id"])
+
+    @command(name="discord", aliases=["disc"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def discord_cmd(self, user, channel, args):
+        await self.send_chat("https://discord.gg/DhwXjT7mJw", channel["broadcaster_id"])
+
+    @command(name="lurk", aliases=["lurking"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def lurk_cmd(self, user, channel, args):
+        await self.send_chat("lurk mode activated!", channel["broadcaster_id"])
 
     @route('/endcredits')
     async def endcredits_route(self, request):
@@ -123,6 +185,11 @@ class MyBot(
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
         out = "".join(each)
         await self.send_chat(out, channel["broadcaster_id"])
+
+
+
+
+
 
 if __name__ == '__main__':
     from plugins import alert_objs

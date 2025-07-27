@@ -40,7 +40,6 @@
 		"name": "clowncore"
 	},
 	"1bb6869c-3253-4e02-8330-1a40fe1b282a": {
-		"lower_volume": 55,
 		"name": "TWSS"
 	},
 	"17004fbc-c9ce-4317-96a8-6a3d9561db5c": {
@@ -58,34 +57,17 @@
 		"source": "YeahBoi",
 		"scene": "[S] Videos"
 	},
-	"383323f9-aee2-4f85-bd67-d5a47027e374": {
-		"lower_volume": 45,
-		"source": "Crybaby",
-		"scene": "[S] Videos"
-	},
-	"2e64b3b8-73ca-475a-8b31-7b41a529f5b4": {
-		"lower_volume": 45,
-		"source": "Delayed",
-		"scene": "[S] Videos"
-	},
 	"1612364d-ea02-4074-bb5f-3e5931bad798": {
-		"lower_volume": 55,
 		"source": "kissmyass",
 		"scene": "[S] Videos"
 	},
 	"54c47cbf-3352-4156-81f2-c7c85bd14c41": {
-		"lower_volume": 55,
 		"source": "LoveEverybody",
 		"scene": "[S] Videos"
 	},
 	"e824616c-41d7-4dd3-b045-25240b0adeaa": {
 		"lower_volume": 45,
 		"source": "Skipatrol",
-		"scene": "[S] Videos"
-	},
-	"59862f47-6758-4cf5-98e3-b2540ddc8c7e": {
-		"lower_volume": 55,
-		"source": "Run Away",
 		"scene": "[S] Videos"
 	},
 	"c03f9b26-56bc-4d2e-8e09-49f270aa619f": {
@@ -99,12 +81,10 @@
 		"scene": "[S] Videos"
 	},
 	"d39b2dfd-8324-4df3-ac10-61987ed565f5": {
-		"lower_volume": 55,
 		"source": "flyingpoodle",
 		"scene": "[S] Videos"
 	},
 	"886a146d-1d38-4114-9a06-ef00e03d2416": {
-		"lower_volume": 55,
 		"source": "supplies",
 		"scene": "[S] Videos"
 	},
@@ -128,32 +108,18 @@
 		"scene": "[S] Videos"
 	},
 	"b7d40663-0b48-4237-a7a2-1aa45d7170ed": {
-		"lower_volume": 55,
 		"source": "goingnowhere",
 		"scene": "[S] Videos"
 	},
 	"3c64cb14-7790-494c-b769-0fa4fa0af2e2": {
-		"lower_volume": 55,
 		"source": "willslap",
 		"scene": "[S] Videos"
 	},
-	"1c4965b2-dc54-4c49-bcca-79d9310f97d8": {
-		"lower_volume": 55,
-		"source": "gimmie",
-		"scene": "[S] Videos"
-	},
 	"d6ecae84-de7a-4680-9ead-d630c4f13823": {
-		"lower_volume": 55,
 		"source": "stupid",
 		"scene": "[S] Videos"
 	},
-	"faf9a494-d449-42ea-9c53-be61db64862f": {
-		"lower_volume": 10,
-		"source": "PPAP",
-		"scene": "[S] Videos"
-	},
 	"fdbc5f51-e9e0-4145-a8c2-542db6cee279": {
-		"lower_volume": 55,
 		"source": "thatshotwill",
 		"scene": "[S] Videos"
 	},

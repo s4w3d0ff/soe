@@ -230,3 +230,31 @@ async function testEvent(eventType) {
         showStatus('Error sending event!', 'error');
     }
 }
+
+async function injectEvent(eventType) {
+    const data = {};
+    
+    switch(eventType) {
+        case 'channel.bits.use':
+            data.bits = document.getElementById('injBitsAmount').value;
+            break;
+    }
+
+    try {
+        const response = await fetch(`/inject/${eventType}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showStatus('Event sent successfully!', 'success');
+        } else {
+            showStatus('Failed to send event!', 'error');
+        }
+    } catch (error) {
+        showStatus('Error sending event!', 'error');
+    }
+}

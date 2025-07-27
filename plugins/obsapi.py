@@ -121,12 +121,21 @@ class OBSController:
             for item in items:
                 await self.hide_source(item['sourceName'], scene_name)
 
+    async def get_input_settings(self, input_name):
+        return await self.call('GetInputSettings', **{"inputName": input_name})
+
     async def set_source_text(self, source_name, text_content):
         """ Edit the text content of a text source """
-        logger.info(f"Setting text content for source {source_name}")
-        return await self.call('SetInputSettings', **{
+        await self.set_source_settings(source_name, {'text': text_content})
+
+    async def set_source_media(self, source_name, media_path):
+        """ Set the media source to a specific path """
+        await self.set_source_settings(source_name, {'local_file': media_path})
+
+    async def set_source_settings(self, source_name, settings):
+        await self.call('SetInputSettings', **{
             'inputName': source_name,
-            'inputSettings': {'text': text_content}
+            'inputSettings': settings
         })
 
     async def _handle_media_end(self, data):
@@ -141,18 +150,23 @@ class OBSController:
             if input_name in self.media_scenes[scene]:
                 await self.hide_source(input_name, scene)
                 break
-        if self.wait_for and self.wait_for == input_name:
-            self.wait_for_event.set()
+        if self.wait_for == input_name:
+            try:
+                self.wait_for_event.set()
+            except:
+                pass
 
     async def show_and_wait(self, source_name, scene_name, wait_for=None):
         """ Show a source, then hold and wait for 'wait_for' media to end """
+        await asyncio.sleep(0.5)
         self.wait_for = wait_for or source_name
         self.wait_for_event = asyncio.Event()
         await self.show_source(source_name, scene_name)
         logger.warning(f"Waiting on: {self.wait_for}")
         await self.wait_for_event.wait()
         self.wait_for = None
-        await self.hide_source(source_name, scene_name)
+        #await self.hide_source(source_name, scene_name)
+        await asyncio.sleep(0.5)
     
     async def clear_wait(self):
         if self.wait_for:
@@ -163,7 +177,7 @@ class OBSController:
             self.wait_for = None
         if self.wait_for_event:
             self.wait_for_event.set()
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
 #==========================================================================================
 # OBSBot =================================================================================
@@ -178,5 +192,5 @@ class OBSBot(TwitchBot):
 
     @route("/obs/clearwait", method="GET")
     async def obs_clear_wait(self, request):
-        await self.obsws.clear_wait()
+        asyncio.create_task(self.obsws.clear_wait())
         return self.app.response_json({"status": True})

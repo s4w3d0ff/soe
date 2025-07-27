@@ -150,7 +150,25 @@
 
             const messageText = document.createElement('div');
             messageText.className = 'message-text';
-            messageText.innerHTML = messageData.text;
+
+            // Use fragments to build the message safely
+            if (Array.isArray(messageData.fragments)) {
+                for (const fragment of messageData.fragments) {
+                    if (fragment.type === "text" && typeof fragment.text === "string") {
+                        // Ensure user input is shown as text, not HTML
+                        const span = document.createElement('span');
+                        span.textContent = fragment.text;
+                        messageText.appendChild(span);
+                    } else if (fragment.type === "emote" && typeof fragment.url === "string") {
+                        const img = document.createElement('img');
+                        img.src = fragment.url;
+                        img.alt = "emote";
+                        img.className = "emote";
+                        messageText.appendChild(img);
+                    }
+                    // Optionally: handle other types in the future
+                }
+            }
 
             messageDiv.appendChild(header);
             messageDiv.appendChild(messageText);

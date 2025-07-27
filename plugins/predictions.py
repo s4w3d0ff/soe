@@ -18,10 +18,7 @@ class PredictionBot(TwitchBot):
     @websocket('/predictionws')
     async def prediction_ws(self, ws, request):
         logger.warning(f"Websocket connected: predictionws")
-        while not self.http.user_id:
-            logger.error(f"predictionws error: not logged in yet")
-            await ws.ping()
-            await asyncio.sleep(10)
+        await self.ws_wait_for_twitch_login(ws)
         while not ws.closed:
             try:
                 if self.current_prediction:

@@ -17,8 +17,7 @@ class VideoRedeem(Alert):
     queue_skip = False
     priority = 3
     store = False
-
-    @duck_volume(volume=40)
+    
     async def process(self):
         rewardConf = points_cfg[self.data["reward"]["id"]]
         await self.bot.obsws.show_and_wait(rewardConf['source'], rewardConf['scene'])

@@ -1,6 +1,6 @@
 # bots -----------------------------------
-from .ban import BannedBot
-from .chat import ChatBot
+from .bits import TotemBot
+from .chat import ChatBot, BlackHoleBot
 from .goals import GoalBot
 from .predictions import PredictionBot
 from .subathon import SubathonBot
@@ -9,6 +9,7 @@ from .obsapi import OBSBot
 from .spotifyapi import SpotifyBot
 from .tarkov import TarkovBot
 from .skynet import AIBot
+from .dcord import DiscordBot
 # alerts -----------------------------------
 from .ban import ChannelBan, ChannelSuspiciousUserMessage
 from .bits import ChannelBitsUse
@@ -19,6 +20,7 @@ from .follow import ChannelFollow
 from .goals import ChannelGoalProgress
 from .hypetrain import ChannelHypeTrainProgress, ChannelHypeTrainEnd
 from .predictions import ChannelPredictionBegin, ChannelPredictionProgress, ChannelPredictionLock, ChannelPredictionEnd
+from .dcord import StreamOnline
 # others  -----------------------------------
 from .tts import generate_speech
 
@@ -39,4 +41,5 @@ alert_objs = {
     'channel.prediction.progress': ChannelPredictionProgress,
     'channel.prediction.lock': ChannelPredictionLock,
     'channel.prediction.end': ChannelPredictionEnd,
+    'stream.online': StreamOnline
 }

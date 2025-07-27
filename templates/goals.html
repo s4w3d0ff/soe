@@ -1,43 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Goals</title>
-	<link rel="stylesheet" href="static/css/goals.css">
+    <meta charset="UTF-8">
+    <title>Goal Milestone Progress Bar</title>
+    <link rel="stylesheet" href="/static/css/goals.css">
+    <script src="/static/js/goals.js"></script>
 </head>
 <body>
-    <div class="goal-container">
-		<div class="contribution-stats">
-			<div class="stat-container goal-total-container">
-				<span class="stat-label goal-total">Monthly Goal</span>
-				<span id="current-amount">0</span>/<span id="goal-total">0</span>
-				<span class="percent-value"><span id="goal-percent">0</span>%</span>
-			</div>
-			<div class="stat-container">
-				<span class="stat-label stat-t1">Tier 1 Subs</span>
-				<span id="t1-current">0</span> / <span id="t1-needed">0</span>
-			</div>
-			<div class="stat-container">
-				<span class="stat-label stat-t2">Tier 2 Subs</span>
-				<span id="t2-current">0</span> / <span id="t2-needed">0</span>
-			</div>
-			<div class="stat-container">
-				<span class="stat-label stat-t3">Tier 3 Subs</span>
-				<span id="t3-current">0</span> / <span id="t3-needed">0</span>
-			</div>
-			<div class="stat-container">
-				<span class="stat-label stat-bits">Bits</span>
-				<span id="bits-current">0</span> / <span id="bits-needed">0</span>
-			</div>
-		</div>
-		<div class="progress-bar">
-			<div class="progress-segment segment-t1" id="segment-t1"></div>
-			<div class="progress-segment segment-t2" id="segment-t2"></div>
-			<div class="progress-segment segment-t3" id="segment-t3"></div>
-			<div class="progress-segment segment-bits" id="segment-bits"></div>
-		</div>
+    <div class="container">
+        <div class="goal-list" id="goalList"></div>
+        <div class="progress-bar-wrapper">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+                <!-- Milestones and labels go here -->
+            </div>
+            <div class="progress-bar-labels">
+                <span id="currentValueLabel"></span>
+                <span id="currentBitsLabel"></span>
+                <span id="currentT1Label"></span>
+                <span id="currentT2Label"></span>
+                <span id="currentT3Label"></span>
+                <span id="maxGoalLabel"></span>
+            </div>
+        </div>
     </div>
-    <script src="static/js/goals.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.goalProgressBar = new GoalProgressBar();
+        });
+    </script>
 </body>
 </html>
