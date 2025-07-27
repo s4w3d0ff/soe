@@ -3,7 +3,7 @@ import random
 import logging
 import asyncio
 from poolguy.storage import loadJSON
-from poolguy import TwitchBot, Alert, websocket, route
+from poolguy import TwitchBot, Alert, websocket, route, command, rate_limit
 from .spotifyapi import duck_volume
 from .tts import generate_speech, VOICES
 
@@ -58,6 +58,9 @@ class ChannelBitsUse(Alert):
                 if int(alertK) == 25:
                     await self._whatever()
                     return
+                if int(alertK) == 69:
+                    await self._fire()
+                    return
                 if int(alertK) == song_skip_amount:
                     if hasattr(self.bot, 'spotify'):
                         await self.bot.spotify.skip_track()
@@ -79,6 +82,12 @@ class ChannelBitsUse(Alert):
        await self.bot.obsws.show_source(source, bit_scene)
        await asyncio.sleep(2)
        await self.bot.obsws.hide_source(source, bit_scene)
+    
+    async def _fire(self):
+       source = f'firebutt{random.randint(1,17)}'
+       await self.bot.obsws.show_source(source, "[S] Firebutt")
+       await asyncio.sleep(8)
+       await self.bot.obsws.hide_source(source, "[S] Firebutt")
 
     @duck_volume(volume=40)
     async def _process_alert(self, amount, alertK, text):
@@ -127,3 +136,9 @@ class TotemBot(TwitchBot):
     @route('/totempole')
     async def totempole(self, request):
         return await self.app.response_html('templates/totem.html')
+
+    @command(name="pole", aliases=["totempole"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def pole_cmd(self, user, channel, args):
+        out = "All gigantified emotes get added to the totempole!"
+        await self.send_chat(out, channel["broadcaster_id"])

@@ -1,5 +1,4 @@
 # bots -----------------------------------
-from .ban import BannedBot
 from .bits import TotemBot
 from .chat import ChatBot, BlackHoleBot
 from .goals import GoalBot

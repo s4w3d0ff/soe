@@ -121,12 +121,21 @@ class OBSController:
             for item in items:
                 await self.hide_source(item['sourceName'], scene_name)
 
+    async def get_input_settings(self, input_name):
+        return await self.call('GetInputSettings', **{"inputName": input_name})
+
     async def set_source_text(self, source_name, text_content):
         """ Edit the text content of a text source """
-        logger.info(f"Setting text content for source {source_name}")
-        return await self.call('SetInputSettings', **{
+        await self.set_source_settings(source_name, {'text': text_content})
+
+    async def set_source_media(self, source_name, media_path):
+        """ Set the media source to a specific path """
+        await self.set_source_settings(source_name, {'local_file': media_path})
+
+    async def set_source_settings(self, source_name, settings):
+        await self.call('SetInputSettings', **{
             'inputName': source_name,
-            'inputSettings': {'text': text_content}
+            'inputSettings': settings
         })
 
     async def _handle_media_end(self, data):

@@ -37,7 +37,7 @@ class GoalBot(TwitchBot):
             s[f"t{i['tier'][0]}"] += 1
         out = {}
         for teir, value in s.items():
-            out[teir] = value * self.multi[teir]
+            out[teir] = {"value": value * self.multi[teir], "amount": value}
         return out
 
     def calculate_goals(self, current_total, bits_total, subs_total):
@@ -56,7 +56,7 @@ class GoalBot(TwitchBot):
                 "bits_total_needed": goal_total - current_total
             }
             for tier, amount in subs_total.items():
-                t[f"{tier}_total_needed"] = int((goal_total - current_total) / self.multi[tier])
+                t[f"{tier}_total_needed"] = int(t["total_needed"] / self.multi[tier])
             out["goals"].append(t)
         return out
 
@@ -67,7 +67,7 @@ class GoalBot(TwitchBot):
         else:
             self.bits_total = await self.get_total_cheers()
         out = self.calculate_goals(
-            self.bits_total + sum([v for v in self.subs_total.values()]), 
+            self.bits_total + sum([v["value"] for v in self.subs_total.values()]), 
             self.bits_total, 
             self.subs_total
         )
@@ -109,7 +109,7 @@ class GoalBot(TwitchBot):
                 """
                 self.goal_queue.task_done()
             except asyncio.TimeoutError:
-                await ws.ping()
+                await self.send_update(ws, "bits")
                 continue
             except Exception as e:
                 logger.error(f"Unexpected error in goalsws loop: {e}")
