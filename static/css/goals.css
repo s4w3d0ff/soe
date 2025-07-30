@@ -26,7 +26,11 @@ body {
 	justify-content: space-between;
 	font-size: 45px;
 	margin-top: 4px;
-	color: #02781b6d;
+	color: #00b97c;
+	text-shadow: 2px 2px 0px black;
+	background-color: #0000006c;
+	border-radius: 0px 0px 8px 8px;
+  	padding: 0px 0px 5px 0px;
 }
 .progress-bar {
 	background: #7e7e7e5b;

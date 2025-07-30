@@ -12,13 +12,7 @@ function showStatus(message, type) {
 class QueueManager {
     constructor() {
         this.queueContainer = document.getElementById('queueItems');
-        this.initialize();
-    }
-
-    initialize() {
-        this.refreshQueueItems();
-        // Refresh queue every 1 second
-        setInterval(() => this.refreshQueueItems(), 3000);
+        this.setupWebSocket();
     }
 
     async refreshQueueItems() {
@@ -36,6 +30,36 @@ class QueueManager {
             console.error('Error fetching queue:', error);
         }
     }
+    handleUpdate(data) {
+        try {
+            if (data.status) {
+                this.displayQueueItems(data.data);
+                this.displayPausedStatus(data.paused);
+            } else {
+                console.error('Failed to fetch queue items');
+            }
+        } catch (error) {
+            console.error('Error fetching queue:', error);
+        }
+    }
+    setupWebSocket() {
+        this.ws = new WebSocket('ws://' + window.location.host + '/queuews');
+        
+        this.ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleUpdate(data);
+        };
+        
+        this.ws.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+        };
+        
+        this.ws.onclose = () => {
+            console.log('WebSocket connection closed. Attempting to reconnect...');
+            setTimeout(() => this.setupWebSocket(), 5000);
+        };
+    }
+
     async pauseQueue() {
         try {
             const response = await fetch('/queue/pause');
