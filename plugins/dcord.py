@@ -3,7 +3,7 @@ import re
 import asyncio
 from poolguy import TwitchBot, Alert, route
 from discord.ext import commands
-from discord import AllowedMentions, Embed, Color, Intents, Interaction
+from discord import AllowedMentions, Embed, Color, Intents
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,6 @@ class DiscordBot(TwitchBot):
         self.discord_bot = bot
         self.discord_task = None
         self.discord_cfg = discord_cfg
-
 
     def start_discord_bot(self):
         self.discord_task = asyncio.create_task(self.discord_bot.start(self.discord_cfg["token"]))
@@ -72,7 +71,17 @@ class DiscordBot(TwitchBot):
 #####################=================---------
 class StreamOnline(Alert):
     queue_skip = True
-    store = True
+
+    async def store(self):
+        await self.bot.storage.insert(
+            "stream_online", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "type": self.data["type"],
+                "id": self.data["id"]
+            }
+        )
 
     async def process(self):
         if hasattr(self.bot, 'discord_bot'):

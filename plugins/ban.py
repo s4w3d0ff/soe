@@ -29,6 +29,21 @@ class ChannelBan(Alert):
         except Exception as e:
             logger.error(f"Error getting user info: {e}")
             return defaultpic
+    
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_ban",
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"],
+                "moderator_user_id": self.data["moderator_user_id"],
+                "moderator_user_login": self.data["moderator_user_login"],
+                "reason": self.data["reason"],
+                "ends_at": self.data["ends_at"]
+            }
+        )
 
     @duck_volume(volume=40)
     async def process(self):
@@ -56,17 +71,21 @@ class ChannelBan(Alert):
 class ChannelSuspiciousUserMessage(Alert):
     queue_skip = True
 
-    async def save(self):
-        self.bot.storage.channel_suspicious_user_message(**{
-            "timestamp": self.timestamp,
-            "user_id": self.data["user_id"],
-            "user_login": self.data["user_login"],
-            "low_trust_status": self.data["low_trust_status"],
-            "shared_ban_channel_ids": self.data["shared_ban_channel_ids"],
-            "types": self.data["types"],
-            "ban_evasion_evaluation": self.data["ban_evasion_evaluation"],
-            "message": self.data["message"]["text"]
-        })
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_suspicious_user_message", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"],
+                "low_trust_status": self.data["low_trust_status"],
+                "shared_ban_channel_ids": self.data["shared_ban_channel_ids"],
+                "types": self.data["types"],
+                "ban_evasion_evaluation": self.data["ban_evasion_evaluation"],
+                "message": json.dumps(self.data["message"])
+            }
+        )
 
     async def process(self):
         logger.warning(f"{json.dumps(self.data, indent=4)}")

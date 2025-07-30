@@ -105,6 +105,21 @@ class ChannelBitsUse(Alert):
             await generate_speech(text, tts_path, voice)
             await self.bot.obsws.show_and_wait(tts_source, bit_scene)
 
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_bits_use", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"],
+                "bits": self.data["bits"],
+                "type": self.data["type"],
+                "message": json.dumps(self.data["message"])
+            }
+        )
+
+
 class TotemBot(TwitchBot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,7 +130,7 @@ class TotemBot(TwitchBot):
     async def totempolews(self, ws, request):
         logger.warning(f"Websocket connected: totempolews")
         await self.ws_wait_for_twitch_login(ws)
-        self.current_totem = await self.storage.load_token("totempole") or []
+        self.current_totem = await self.storage.get_token("totempole") or []
         for item in self.current_totem:
             await asyncio.sleep(1)
             await ws.send_json({"imageUrl": item})
@@ -123,14 +138,21 @@ class TotemBot(TwitchBot):
             try:
                 update = await asyncio.wait_for(self.totem_queue.get(), timeout=15)
                 await ws.send_json({"imageUrl": update})
-                await self.storage.save_token(self.current_totem, "totempole")
+                await self.storage.save_token("totempole", self.current_totem)
                 await asyncio.sleep(1)
+            except ConnectionResetError:
+                logger.warning("WebSocket client forcibly disconnected during send")
+                break
             except asyncio.TimeoutError:
-                await ws.ping()
-                continue
+                try:
+                    await ws.ping()
+                except Exception as e:
+                    logger.warning(f"Ping failed: {e}")
+                    break
             except Exception as e:
                 logger.error(f"Unexpected error in totempolews loop: {e}")
                 break
+        ws.exception()
         logger.warning("totempolews connection closed")
 
     @route('/totempole')

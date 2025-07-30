@@ -16,7 +16,6 @@ points_cfg = loadJSON("db/chan_points_cfg.json")
 class VideoRedeem(Alert):
     queue_skip = False
     priority = 3
-    store = False
     
     async def process(self):
         rewardConf = points_cfg[self.data["reward"]["id"]]
@@ -25,7 +24,6 @@ class VideoRedeem(Alert):
 class ClownCoreRedeem(Alert):
     queue_skip = False
     priority = 3
-    store = False
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,6 +44,22 @@ class ClownCoreRedeem(Alert):
 
 class ChannelChannelPointsCustomRewardRedemptionAdd(Alert):
     queue_skip = True
+
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_channel_points_custom_reward_redemption_add", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"],
+                "user_input": self.data["user_input"],
+                "reward_id": self.data["reward"]["id"],
+                "title": self.data["reward"]["title"],
+                "cost": self.data["reward"]["cost"],
+                "prompt": self.data["reward"]["prompt"]
+            }
+        )
 
     async def timeout(self, size=60):
         viewer2ban = self.data["user_input"].replace("@", "").replace(" ", "")

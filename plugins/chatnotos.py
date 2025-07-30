@@ -1,3 +1,4 @@
+from asyncio import iscoroutine
 import json
 import random
 import logging
@@ -275,20 +276,15 @@ class RaidNoto(Alert):
     @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
-        name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        sys_message = self.data['system_message']
         event = self.data[notice_type]
-        raidFrom = event['user_name']
+        raidFrom = event['user_login']
         img_url = event['profile_image_url']
         views = event['viewer_count']
+        await self.bot.http.sendChatMessage(f"{raidFrom} thank you for the {views} viewer raid!")
+        #await self.bot.http.sendShoutout(to_broadcaster_id=event['user_id'])
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(int(views), 'raids')
-        if hasattr(self.bot, 'ai'):
-            r = self.bot.ai.ask(f'Incoming raid from {raidFrom} with {views} viewers, please inform chat.')
-        else:
-            r = f"{raidFrom} thank you for the {views} viewer raid!"
-        await self.bot.http.sendChatMessage(f'{r}')
         if hasattr(self.bot, 'obsws'):
             await self.bot.obsws.set_source_text(self._text, f" {raidFrom} is raiding with {views} viewers!")
             for a in self._altscenes:
@@ -297,12 +293,29 @@ class RaidNoto(Alert):
             await self.bot.obsws.set_source_text(self._text, "")
             for a in self._altscenes:
                 await self.bot.obsws.hide_source(a, self._scene)
-        #await self.bot.http.sendShoutout(to_broadcaster_id=event['user_id'])
+        
 
 
 class ChannelChatNotification(Alert):
     priority = 1
     queue_skip = True
+
+    async def store(self):
+        await self.bot.storage.insert(
+            f"channel_chat_notification_{self.data["notice_type"]}", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "system_message": self.data['system_message'],
+                "notice_type": self.data["notice_type"],
+                "chatter_user_id": self.data["chatter_user_id"],
+                "chatter_user_login": self.data["chatter_user_login"],
+                "chatter_is_anonymous": self.data["chatter_is_anonymous"],
+                "color": self.data["color"],
+                **self.data[self.data["notice_type"]]
+            }
+        )
+
     async def process(self):
         notice_type = self.data['notice_type']
         if notice_type.startswith('shared'):
@@ -338,8 +351,4 @@ class ChannelChatNotification(Alert):
             case _:
                 pass
         if alert:
-            if alert.store:
-                a = args[1:]
-                await self.bot.storage.save_alert(*a)
             await self.bot.ws.notification_handler._queue.put(alert)
-            alert = None
