@@ -10,7 +10,7 @@ from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, ChatBot,
-    SubathonBot, AIBot, GoalBot, OBSBot,
+    SubathonBot, GoalBot, OBSBot,
     PredictionBot, BlackHoleBot, DiscordBot, TotemBot
 )
 
