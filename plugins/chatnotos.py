@@ -1,4 +1,4 @@
-from asyncio import iscoroutine
+import copy
 import json
 import random
 import logging
@@ -300,27 +300,40 @@ class ChannelChatNotification(Alert):
     priority = 1
     queue_skip = True
 
-    async def store(self):
+    async def _store(self):
+        out = {}
+        for key, value in copy.deepcopy(self.data).items():
+            # skip shared chat notos
+            if key.startswith('shared_') or key.startswith('source_') or key.startswith('broadcaster_'):
+                continue
+            # skip empty values and keys that are not needed
+            if not value or key in ["notice_type", "chatter_user_name"]:
+                continue
+            # convert lists to json strings
+            if isinstance(value, list):
+                out[key] = json.dumps(value)
+            # walk first level of dict and convert lists and dicts to json strings
+            elif isinstance(value, dict):
+                for k, v in copy.deepcopy(self.data[key]).items():
+                    if isinstance(v, list) or isinstance(v, dict):
+                        out[f'{key}_{k}'] = json.dumps(v)
+                    else:
+                        out[f'{key}_{k}'] = v
+            else:
+                # pass through other types
+                out[key] = value
+        out["timestamp"] = self.timestamp
+        out["message_id"] = self.message_id
         await self.bot.storage.insert(
             f"channel_chat_notification_{self.data["notice_type"]}", 
-            {
-                "timestamp": self.timestamp,
-                "message_id": self.message_id,
-                "system_message": self.data['system_message'],
-                "notice_type": self.data["notice_type"],
-                "chatter_user_id": self.data["chatter_user_id"],
-                "chatter_user_login": self.data["chatter_user_login"],
-                "chatter_is_anonymous": self.data["chatter_is_anonymous"],
-                "color": self.data["color"],
-                **self.data[self.data["notice_type"]]
-            }
+            out
         )
 
     async def process(self):
         notice_type = self.data['notice_type']
         if notice_type.startswith('shared'):
             return
-        logger.debug(f"eventsub.{self.channel}.{notice_type}.data: \n{json.dumps(self.data, indent=4)}")
+        logger.debug(f"eventsub.{self.channel}.{notice_type}.data:\n{json.dumps(self.data, indent=4)}")
         alert = None
         args = [self.bot, self.message_id, self.channel, self.data.copy(), self.timestamp]
         match notice_type:
@@ -351,4 +364,8 @@ class ChannelChatNotification(Alert):
             case _:
                 pass
         if alert:
+            if alert.store:
+                await alert.store()
             await self.bot.ws.notification_handler._queue.put(alert)
+        else:
+            await self._store()

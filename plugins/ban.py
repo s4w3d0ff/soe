@@ -1,10 +1,8 @@
 import logging
-import aiofiles
 import json
-import random
+import time
 import asyncio
-from aiohttp import web
-from poolguy import TwitchBot, Alert, route
+from poolguy import Alert
 from .spotifyapi import duck_volume
 
 logger = logging.getLogger(__name__)
@@ -61,6 +59,7 @@ class ChannelBan(Alert):
         await self.bot.obsws.show_source(source, scene)
         await asyncio.sleep(18)
         await self.bot.obsws.hide_source(source, scene)
+        await asyncio.sleep(2)
         await self.bot.obsws.set_source_settings("banpic", {"file": defaultpic})
         await self.bot.obsws.set_source_text("banname", "some child")
         await asyncio.sleep(2)
@@ -70,6 +69,11 @@ class ChannelBan(Alert):
 #######################################=================---------
 class ChannelSuspiciousUserMessage(Alert):
     queue_skip = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cooldown = 15
+        self.last = 0
 
     async def store(self):
         await self.bot.storage.insert(
@@ -88,4 +92,9 @@ class ChannelSuspiciousUserMessage(Alert):
         )
 
     async def process(self):
-        logger.warning(f"{json.dumps(self.data, indent=4)}")
+        if not time.time() - self.last > self.cooldown:
+            return
+        await self.bot.obsws.show_source("amongsus", "[S] Videos")
+        await asyncio.sleep(3)
+        await self.bot.obsws.hide_source("amongsus", "[S] Videos")
+        self.last = time.time()
