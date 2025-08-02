@@ -16,7 +16,18 @@ class ChannelFollow(Alert):
         self.bit_scene = "[S] Bit Alerts"
         self.bit_altscenes = ["CheerText", "alertbg", "AlerttxtBG"]
         self.bit_text = "CheerText"
-        
+
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_follow", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"]
+            }
+        )
+
     @duck_volume(volume=50)
     async def process(self):
         uname = self.data['user_name']

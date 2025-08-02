@@ -10,7 +10,7 @@ from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, ChatBot,
-    SubathonBot, AIBot, GoalBot, OBSBot,
+    SubathonBot, GoalBot, OBSBot,
     PredictionBot, BlackHoleBot, DiscordBot, TotemBot
 )
 
@@ -45,12 +45,11 @@ class MyBot(
         kwargs['spotify_cfg']['client_secret'] = spotify_client_secret
         kwargs['obs_cfg']['password'] = obsws_password
         kwargs['discord_cfg']['token'] = discord_token
-
         super().__init__(*args, **kwargs)
 
     async def after_login(self):
         await self.setup_chat()
-        self.spotify.token_handler.storage = self.http.storage
+        #self.spotify.token_handler.storage = self.http.storage
         await self.spotify.login()
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
             await self.http.server.start()
@@ -67,11 +66,11 @@ class MyBot(
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
         await self.obsws.hide_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
-        await self.obsws.hide_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        #await self.obsws.hide_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
         await self.obsws.hide_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
         await asyncio.sleep(2)
         await self.obsws.show_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
-        await self.obsws.show_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        #await self.obsws.show_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
         await self.obsws.show_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
         await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
 
@@ -185,9 +184,6 @@ class MyBot(
         each = [f"[{key} - {cfg[key]['name']}] " for key, value in cfg.items()]
         out = "".join(each)
         await self.send_chat(out, channel["broadcaster_id"])
-
-
-
 
 
 

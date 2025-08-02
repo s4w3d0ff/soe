@@ -126,7 +126,7 @@ class Subathon:
         # Save stats to SQLite every 15 seconds
         if time.time() - self._last_stat_check > 15:
             self._last_stat_check = time.time()
-            await self.storage.save_token(stats, "subathon")
+            await self.storage.save_token("subathon", stats)
         return stats
 
     def get_time_left(self):
@@ -180,10 +180,22 @@ class SubathonBot(TwitchBot):
             try:
                 await ws.send_json({"status": True, "data": await self.subathon.get_stats()})
                 await asyncio.sleep(0.5)
+            except ConnectionResetError:
+                logger.warning("WebSocket client forcibly disconnected during send")
+                break
+            except asyncio.TimeoutError:
+                try:
+                    await ws.ping()
+                except Exception as e:
+                    logger.warning(f"Ping failed: {e}")
+                    break
             except Exception as e:
                 logger.error(f"Unexpected error in subathonws loop: {e}")
                 break
+            await asyncio.sleep(1)
+        ws.exception()
         logger.warning("subathonws connection closed")
+        
 
 
     @route('/subathon/ui', method='GET')

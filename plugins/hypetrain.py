@@ -1,4 +1,5 @@
 import logging
+import json
 from poolguy import Alert
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ hype_cfg = {
 ###################################=================---------
 class ChannelHypeTrainProgress(Alert):
     queue_skip = True
-    store = False
+
     async def process(self):
         if hasattr(self.bot, 'obsws'):
             for k in hype_cfg:
@@ -29,6 +30,20 @@ class ChannelHypeTrainProgress(Alert):
 ##############################=================---------
 class ChannelHypeTrainEnd(Alert):
     queue_skip = True
+
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_hype_train_end", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "total": self.data["total"],
+                "is_golden_kappa_train": self.data["is_golden_kappa_train"],
+                "level": self.data["level"],
+                "cooldown_ends_at": self.data["cooldown_ends_at"],
+                "top_contributions": json.dumps(self.data["top_contributions"])
+            }
+        )
     async def process(self):
         if hasattr(self.bot, 'obsws'):
             for k in hype_cfg:

@@ -60,10 +60,20 @@ class ChatBot(TwitchBot):
         while not ws.closed:
             try:
                 await ws.send_json(self.chat_history)
+            except ConnectionResetError:
+                logger.warning("WebSocket client forcibly disconnected during send")
+                break
+            except asyncio.TimeoutError:
+                try:
+                    await ws.ping()
+                except Exception as e:
+                    logger.warning(f"Ping failed: {e}")
+                    break
             except Exception as e:
                 logger.error(f"Unexpected error in chatws loop: {e}")
                 break
             await asyncio.sleep(1)
+        ws.exception()
         logger.warning("chatws connection closed")
 
     @route('/chat')
@@ -85,12 +95,19 @@ class BlackHoleBot(TwitchBot):
                 update = await asyncio.wait_for(self.blackhole_queue.get(), timeout=15)
                 await ws.send_json(update)
                 self.blackhole_queue.task_done()
+            except ConnectionResetError:
+                logger.warning("WebSocket client forcibly disconnected during send")
+                break
             except asyncio.TimeoutError:
-               await ws.ping()
-               continue
+                try:
+                    await ws.ping()
+                except Exception as e:
+                    logger.warning(f"Ping failed: {e}")
+                    break
             except Exception as e:
                 logger.error(f"Unexpected error in blackholews loop: {e}")
                 break
+        ws.exception()
         logger.warning("Blackhole websocket connection closed")
     
     @route('/blackhole')
@@ -102,8 +119,7 @@ class BlackHoleBot(TwitchBot):
 ############################=================---------
 class ChannelChatMessage(Alert):
     queue_skip = True
-    store = False
-
+    
     async def parseBadges(self):
         bid = self.data['source_broadcaster_user_id'] or self.data['broadcaster_user_id']
         message_badges = self.data['source_badges'] or self.data['badges']
@@ -190,7 +206,6 @@ class ChannelChatMessage(Alert):
 ###################################=================---------
 class ChannelChatMessageDelete(Alert):
     queue_skip = True
-    store = False
 
     async def process(self):
         if hasattr(self.bot, 'chat_history'):
@@ -201,7 +216,6 @@ class ChannelChatMessageDelete(Alert):
 ###################################=================---------
 class ChannelChatClearUserMessages(Alert):
     queue_skip = True
-    store = False
 
     async def process(self):
         if hasattr(self.bot, 'chat_history'):

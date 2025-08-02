@@ -1,3 +1,4 @@
+import copy
 import json
 import random
 import logging
@@ -275,20 +276,15 @@ class RaidNoto(Alert):
     @duck_volume(volume=30)
     async def process(self):
         notice_type = self.data['notice_type']
-        name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
-        sys_message = self.data['system_message']
         event = self.data[notice_type]
-        raidFrom = event['user_name']
+        raidFrom = event['user_login']
         img_url = event['profile_image_url']
         views = event['viewer_count']
+        await self.bot.http.sendChatMessage(f"{raidFrom} thank you for the {views} viewer raid!")
+        #await self.bot.http.sendShoutout(to_broadcaster_id=event['user_id'])
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(int(views), 'raids')
-        if hasattr(self.bot, 'ai'):
-            r = self.bot.ai.ask(f'Incoming raid from {raidFrom} with {views} viewers, please inform chat.')
-        else:
-            r = f"{raidFrom} thank you for the {views} viewer raid!"
-        await self.bot.http.sendChatMessage(f'{r}')
         if hasattr(self.bot, 'obsws'):
             await self.bot.obsws.set_source_text(self._text, f" {raidFrom} is raiding with {views} viewers!")
             for a in self._altscenes:
@@ -297,17 +293,47 @@ class RaidNoto(Alert):
             await self.bot.obsws.set_source_text(self._text, "")
             for a in self._altscenes:
                 await self.bot.obsws.hide_source(a, self._scene)
-        #await self.bot.http.sendShoutout(to_broadcaster_id=event['user_id'])
+        
 
 
 class ChannelChatNotification(Alert):
     priority = 1
     queue_skip = True
+
+    async def _store(self):
+        out = {}
+        for key, value in copy.deepcopy(self.data).items():
+            # skip shared chat notos
+            if key.startswith('shared_') or key.startswith('source_') or key.startswith('broadcaster_'):
+                continue
+            # skip empty values and keys that are not needed
+            if not value or key in ["notice_type", "chatter_user_name"]:
+                continue
+            # convert lists to json strings
+            if isinstance(value, list):
+                out[key] = json.dumps(value)
+            # walk first level of dict and convert lists and dicts to json strings
+            elif isinstance(value, dict):
+                for k, v in copy.deepcopy(self.data[key]).items():
+                    if isinstance(v, list) or isinstance(v, dict):
+                        out[f'{key}_{k}'] = json.dumps(v)
+                    else:
+                        out[f'{key}_{k}'] = v
+            else:
+                # pass through other types
+                out[key] = value
+        out["timestamp"] = self.timestamp
+        out["message_id"] = self.message_id
+        await self.bot.storage.insert(
+            f"channel_chat_notification_{self.data["notice_type"]}", 
+            out
+        )
+
     async def process(self):
         notice_type = self.data['notice_type']
         if notice_type.startswith('shared'):
             return
-        logger.debug(f"eventsub.{self.channel}.{notice_type}.data: \n{json.dumps(self.data, indent=4)}")
+        logger.debug(f"eventsub.{self.channel}.{notice_type}.data:\n{json.dumps(self.data, indent=4)}")
         alert = None
         args = [self.bot, self.message_id, self.channel, self.data.copy(), self.timestamp]
         match notice_type:
@@ -339,7 +365,7 @@ class ChannelChatNotification(Alert):
                 pass
         if alert:
             if alert.store:
-                a = args[1:]
-                await self.bot.storage.save_alert(*a)
+                await alert.store()
             await self.bot.ws.notification_handler._queue.put(alert)
-            alert = None
+        else:
+            await self._store()

@@ -14,9 +14,25 @@ class SubathonController {
         this.apiBaseUrl = '/subathon';
         this.previousStats = null;
         this.initializeEventListeners();
-        this.startPeriodicUpdates();
+        this.setupWebSocket();
     }
-
+    setupWebSocket() {
+        this.ws = new WebSocket('ws://' + window.location.host + '/subathonws');
+        
+        this.ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.updateStats(data.data);
+        };
+        
+        this.ws.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+        };
+        
+        this.ws.onclose = () => {
+            console.log('WebSocket connection closed. Attempting to reconnect...');
+            setTimeout(() => this.setupWebSocket(), 5000);
+        };
+    }
     // API Methods
     async callApi(cmd, args = {}, method = 'POST') {
         try {
@@ -157,27 +173,5 @@ class SubathonController {
                     break;
             }
         });
-    }
-
-    async startPeriodicUpdates() {
-        try {
-            const data = await this.callApi('stats', {}, 'GET');
-            if (data?.status) {
-                this.updateStats(data.data);
-            }
-        } catch (error) {
-            console.error('Stats initialization error:', error);
-        }
-
-        setInterval(async () => {
-            try {
-                const data = await this.callApi('stats', {}, 'GET');
-                if (data?.status) {
-                    this.updateStats(data.data);
-                }
-            } catch (error) {
-                console.error('Stats update error:', error);
-            }
-        }, 2000);
     }
 }

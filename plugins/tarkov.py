@@ -109,7 +109,7 @@ class TarkovLogMonitor:
     async def _monitor_file(self, file_name, folder):
         base_name = folder.name.replace('log_', '')
         possible_paths = [
-            folder / f"{base_name} {file_name}.log",  # Pattern with space
+            folder / f"{base_name} {file_name}.log",   # Pattern with space
             folder / f"{base_name}-{file_name}.log",   # Pattern with hyphen
             folder / f"{base_name}_{file_name}.log",   # Pattern with underscore
         ]

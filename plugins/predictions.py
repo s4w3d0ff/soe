@@ -23,10 +23,23 @@ class PredictionBot(TwitchBot):
             try:
                 if self.current_prediction:
                     await ws.send_json(self.current_prediction)
+                else:
+                    await ws.ping()
+                await asyncio.sleep(0.5)
+            except ConnectionResetError:
+                logger.warning("WebSocket client forcibly disconnected during send")
+                break
+            except asyncio.TimeoutError:
+                try:
+                    await ws.ping()
+                except Exception as e:
+                    logger.warning(f"Ping failed: {e}")
+                    break
             except Exception as e:
                 logger.error(f"Unexpected error in predictionws loop: {e}")
                 break
             await asyncio.sleep(1)
+        ws.exception()
         logger.warning("predictionws connection closed")
 
     @route('/prediction')
@@ -54,7 +67,6 @@ class ChannelPredictionBegin(Alert):
     }
     """
     queue_skip = True
-    store = False
 
     async def process(self):
         logger.warning(f'{json.dumps(self.data, indent=4)}')
@@ -120,7 +132,6 @@ class ChannelPredictionProgress(Alert):
     }
     """
     queue_skip = True
-    store = False
 
     async def process(self):
         logger.warning(f'{json.dumps(self.data, indent=4)}')
@@ -185,7 +196,6 @@ class ChannelPredictionLock(Alert):
     }
     """
     queue_skip = True
-    store = False
 
     async def process(self):
         logger.warning(f'{json.dumps(self.data, indent=4)}')
@@ -261,7 +271,19 @@ class ChannelPredictionEnd(Alert):
     }
     """
     queue_skip = True
-    store = True
+    
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_prediction_end", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "title": self.data["title"],
+                "outcomes": json.dumps(self.data["outcomes"]),
+                "winning_outcome_id": self.data["winning_outcome_id"],
+                "status": self.data["status"]
+            }
+        )
 
     async def process(self):
         logger.warning(f'{json.dumps(self.data, indent=4)}')

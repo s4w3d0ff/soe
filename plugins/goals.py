@@ -2,7 +2,6 @@ import asyncio
 import json
 import time
 import logging
-from datetime import datetime, timedelta
 from poolguy import TwitchBot, Alert, route, websocket
 
 logger = logging.getLogger(__name__)
@@ -18,12 +17,12 @@ class GoalBot(TwitchBot):
         self.last_sub_update = 0
 
     async def get_total_cheers(self, days_back=30):
-        now = datetime.now()
-        earliest = now - timedelta(days=days_back)
-        alerts = await self.storage.load_alerts('channel.bits.use', date=earliest)
+        t = time.time()
+        limit = 86400*days_back
+        alerts = await self.storage.query('channel_bits_use', 'WHERE CAST(timestamp AS REAL) >= ?', (t-limit,))
         total_bits = 0
         for alert in alerts:
-            total_bits += int(alerts[alert]['bits']) if 'bits' in alerts[alert] else 0
+            total_bits += int(alert['bits'])
         return total_bits * self.multi["bits"]
 
     async def get_total_subs(self):
@@ -81,39 +80,45 @@ class GoalBot(TwitchBot):
         await asyncio.sleep(2.5)
         await self.send_update(ws, "bits")
         await asyncio.sleep(5.5)
-        
+        """
+        {
+            "bits_total": int,
+            "subs_total": {
+                "t1": int,
+                "t2": int,
+                "t3": int
+            },
+            "current_total": int,
+            "goals": [{
+                "goal_name": str,
+                "goal_total": int,
+                "percent_complete": int,
+                "total_needed": int,
+                "bits_total_needed": int,
+                "t1_total_needed": int,
+                "t2_total_needed": int,
+                "t3_total_needed": int
+                }]
+        }
+        """
         while not ws.closed:
             try:
                 update = await asyncio.wait_for(self.goal_queue.get(), timeout=15)
                 await self.send_update(ws, update['gtype'])
-                """
-                {
-                    "bits_total": int,
-                    "subs_total": {
-                        "t1": int,
-                        "t2": int,
-                        "t3": int
-                    },
-                    "current_total": int,
-                    "goals": [{
-                        "goal_name": str,
-                        "goal_total": int,
-                        "percent_complete": int,
-                        "total_needed": int,
-                        "bits_total_needed": int,
-                        "t1_total_needed": int,
-                        "t2_total_needed": int,
-                        "t3_total_needed": int
-                        }]
-                }
-                """
                 self.goal_queue.task_done()
+            except ConnectionResetError:
+                logger.warning("WebSocket client forcibly disconnected during send")
+                break
             except asyncio.TimeoutError:
-                await self.send_update(ws, "bits")
-                continue
+                try:
+                    await ws.ping()
+                except Exception as e:
+                    logger.warning(f"Ping failed: {e}")
+                    break
             except Exception as e:
                 logger.error(f"Unexpected error in goalsws loop: {e}")
                 break
+        ws.exception()
         logger.warning("goalsws connection closed")
 
     @route('/goals')
@@ -123,7 +128,6 @@ class GoalBot(TwitchBot):
 
 class ChannelGoalProgress(Alert):
     queue_skip = True
-    store = False
 
     async def process(self):
         logger.debug(f"{json.dumps(self.data, indent=2)}")

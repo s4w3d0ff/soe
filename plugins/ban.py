@@ -1,10 +1,8 @@
 import logging
-import aiofiles
 import json
-import random
+import time
 import asyncio
-from aiohttp import web
-from poolguy import TwitchBot, Alert, route
+from poolguy import Alert
 from .spotifyapi import duck_volume
 
 logger = logging.getLogger(__name__)
@@ -29,6 +27,21 @@ class ChannelBan(Alert):
         except Exception as e:
             logger.error(f"Error getting user info: {e}")
             return defaultpic
+    
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_ban",
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"],
+                "moderator_user_id": self.data["moderator_user_id"],
+                "moderator_user_login": self.data["moderator_user_login"],
+                "reason": self.data["reason"],
+                "ends_at": self.data["ends_at"]
+            }
+        )
 
     @duck_volume(volume=40)
     async def process(self):
@@ -46,6 +59,7 @@ class ChannelBan(Alert):
         await self.bot.obsws.show_source(source, scene)
         await asyncio.sleep(18)
         await self.bot.obsws.hide_source(source, scene)
+        await asyncio.sleep(2)
         await self.bot.obsws.set_source_settings("banpic", {"file": defaultpic})
         await self.bot.obsws.set_source_text("banname", "some child")
         await asyncio.sleep(2)
@@ -56,17 +70,31 @@ class ChannelBan(Alert):
 class ChannelSuspiciousUserMessage(Alert):
     queue_skip = True
 
-    async def save(self):
-        self.bot.storage.channel_suspicious_user_message(**{
-            "timestamp": self.timestamp,
-            "user_id": self.data["user_id"],
-            "user_login": self.data["user_login"],
-            "low_trust_status": self.data["low_trust_status"],
-            "shared_ban_channel_ids": self.data["shared_ban_channel_ids"],
-            "types": self.data["types"],
-            "ban_evasion_evaluation": self.data["ban_evasion_evaluation"],
-            "message": self.data["message"]["text"]
-        })
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cooldown = 15
+        self.last = 0
+
+    async def store(self):
+        await self.bot.storage.insert(
+            "channel_suspicious_user_message", 
+            {
+                "timestamp": self.timestamp,
+                "message_id": self.message_id,
+                "user_id": self.data["user_id"],
+                "user_login": self.data["user_login"],
+                "low_trust_status": self.data["low_trust_status"],
+                "shared_ban_channel_ids": self.data["shared_ban_channel_ids"],
+                "types": self.data["types"],
+                "ban_evasion_evaluation": self.data["ban_evasion_evaluation"],
+                "message": json.dumps(self.data["message"])
+            }
+        )
 
     async def process(self):
-        logger.warning(f"{json.dumps(self.data, indent=4)}")
+        if not time.time() - self.last > self.cooldown:
+            return
+        await self.bot.obsws.show_source("amongsus", "[S] Videos")
+        await asyncio.sleep(3)
+        await self.bot.obsws.hide_source("amongsus", "[S] Videos")
+        self.last = time.time()
