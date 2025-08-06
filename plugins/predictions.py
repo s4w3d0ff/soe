@@ -17,30 +17,13 @@ class PredictionBot(TwitchBot):
 
     @websocket('/predictionws')
     async def prediction_ws(self, ws, request):
-        logger.warning(f"Websocket connected: predictionws")
-        await self.ws_wait_for_twitch_login(ws)
-        while not ws.closed:
-            try:
-                if self.current_prediction:
-                    await ws.send_json(self.current_prediction)
-                else:
-                    await ws.ping()
-                await asyncio.sleep(0.5)
-            except ConnectionResetError:
-                logger.warning("WebSocket client forcibly disconnected during send")
-                break
-            except asyncio.TimeoutError:
-                try:
-                    await ws.ping()
-                except Exception as e:
-                    logger.warning(f"Ping failed: {e}")
-                    break
-            except Exception as e:
-                logger.error(f"Unexpected error in predictionws loop: {e}")
-                break
-            await asyncio.sleep(1)
-        ws.exception()
-        logger.warning("predictionws connection closed")
+        async def loop(ws, request):
+            if self.current_prediction:
+                await ws.send_json(self.current_prediction)
+            else:
+                await ws.ping()
+            await asyncio.sleep(0.5)
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
 
     @route('/prediction')
     async def prediction_route(self, request):

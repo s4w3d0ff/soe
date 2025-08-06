@@ -2,6 +2,8 @@ keyboard
 pydub
 edge_tts
 simpleobsws
+aiosqlite
 rich
+discord.py
 git+https://github.com/s4w3d0ff/spotifio.git
 git+https://github.com/s4w3d0ff/pool-guy.git

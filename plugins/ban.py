@@ -55,7 +55,7 @@ class ChannelBan(Alert):
         await self.bot.obsws.set_source_text("banname", self.data['user_name'])
         #dur = "permanently banned" if self.data['is_permanent'] else "timed out"
         #reason = self.data['reason']
-        await self.bot.http.sendChatMessage(f'Get rekt {name} Modding')
+        await self.bot.send_chat(f'Get rekt {name} Modding')
         await self.bot.obsws.show_source(source, scene)
         await asyncio.sleep(18)
         await self.bot.obsws.hide_source(source, scene)

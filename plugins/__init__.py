@@ -1,6 +1,6 @@
 # bots -----------------------------------
 from .bits import TotemBot
-from .chat import ChatBot, BlackHoleBot
+from .chat import ChatBot, BlackHoleBot, DumpCupBot
 from .goals import GoalBot
 from .predictions import PredictionBot
 from .subathon import SubathonBot

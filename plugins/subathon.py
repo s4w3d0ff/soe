@@ -173,30 +173,10 @@ class SubathonBot(TwitchBot):
 
     @websocket('/subathonws')
     async def subathonws(self, ws, request):
-        logger.warning(f"Websocket connected: subathonws")
-        await self.ws_wait_for_twitch_login(ws)
-        await ws.send_json({"status": True, "data": await self.subathon.get_stats()})
-        while not ws.closed:
-            try:
-                await ws.send_json({"status": True, "data": await self.subathon.get_stats()})
-                await asyncio.sleep(0.5)
-            except ConnectionResetError:
-                logger.warning("WebSocket client forcibly disconnected during send")
-                break
-            except asyncio.TimeoutError:
-                try:
-                    await ws.ping()
-                except Exception as e:
-                    logger.warning(f"Ping failed: {e}")
-                    break
-            except Exception as e:
-                logger.error(f"Unexpected error in subathonws loop: {e}")
-                break
-            await asyncio.sleep(1)
-        ws.exception()
-        logger.warning("subathonws connection closed")
-        
-
+        async def loop(ws, request):
+            await ws.send_json({"status": True, "data": await self.subathon.get_stats()})
+            await asyncio.sleep(0.5)
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
 
     @route('/subathon/ui', method='GET')
     async def subathon_ui(self, request):
@@ -262,11 +242,11 @@ class SubathonBot(TwitchBot):
         else:
             remaining_time = f"{int(remaining_time)} seconds"
         if self.subathon.timer._paused:
-            await self.http.sendChatMessage(f"Subathon is paused with {remaining_time} remaining.", broadcaster_id=channel["broadcaster_id"])
+            await self.send_chat(f"Subathon is paused with {remaining_time} remaining.", broadcaster_id=channel["broadcaster_id"])
             return
         if self.subathon.is_running():
-            await self.http.sendChatMessage(f"Subathon is currently running with {remaining_time} left!", broadcaster_id=channel["broadcaster_id"])
+            await self.send_chat(f"Subathon is currently running with {remaining_time} left!", broadcaster_id=channel["broadcaster_id"])
             txt = "".join(
                 [f"[ {k} = {v} second(s) ]" if v < 60 else f"[ {k} = {int(v / 60)} minute(s) and {int(v % 60)} second(s) ]" for k, v in self.subathon.value_multipliers.items()]
                 )
-            await self.http.sendChatMessage(txt, broadcaster_id=channel["broadcaster_id"])
+            await self.send_chat(txt, broadcaster_id=channel["broadcaster_id"])

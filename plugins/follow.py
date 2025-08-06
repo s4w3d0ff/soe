@@ -32,7 +32,7 @@ class ChannelFollow(Alert):
     async def process(self):
         uname = self.data['user_name']
         logger.info(f"[Bot] {uname} followed!")
-        await self.bot.http.sendChatMessage(f"Thank you for the follow! @{uname} s4w3d0FfLuv")
+        await self.bot.send_chat(f"Thank you for the follow! @{uname} s4w3d0FfLuv")
         await self.bot.obsws.set_source_text(self.bit_text, f" {uname} joined the cabbage patch!")
         for a in self.bit_altscenes:
             await self.bot.obsws.show_source(a, self.bit_scene)

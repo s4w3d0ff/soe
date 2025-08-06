@@ -10,7 +10,7 @@ from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
     TesterBot, SpotifyBot, TarkovBot, ChatBot,
-    SubathonBot, GoalBot, OBSBot,
+    SubathonBot, GoalBot, OBSBot, DumpCupBot,
     PredictionBot, BlackHoleBot, DiscordBot, TotemBot
 )
 
@@ -23,7 +23,7 @@ class MyBot(
         OBSBot, SubathonBot, GoalBot, 
         SpotifyBot, TarkovBot, CommandBot, BlackHoleBot,
         PredictionBot, ChatBot, TesterBot, UIBot, DiscordBot, 
-        TotemBot
+        TotemBot, DumpCupBot
         ):
     def __init__(self, *args, **kwargs):
         # Fetch sensitive data from environment variables
@@ -53,6 +53,7 @@ class MyBot(
         await self.spotify.login()
         if not self.http.server.is_running() and self.http.server.route_len() > 2:
             await self.http.server.start()
+        #await self.load_cheermotes()
         await self.eft.start()
         self.subathon.storage = self.http.storage
         await self.subathon.init()
@@ -107,7 +108,36 @@ class MyBot(
                 if json:
                     return await response.json()
                 return await response.text()
-    
+
+    @route('/endcredits')
+    async def endcredits_route(self, request):
+        credits = "<br><h2>Director</h2>s4w3d0ff"
+        subs = self._cleanSubs(await self.http.getBroadcasterSubscriptions())
+        if len(subs['t3']) > 0:
+            credits += "<br><h2>Producers</h2>" + '<br> '.join(subs['t3'])
+        if len(subs['t2']) > 0:
+            credits += "<br><h2>Executive Producers</h2>" + '<br> '.join(subs['t2'])
+        credits += "<br><h2>Writers</h2>" + "<br> ".join([i["user_name"] for i in await self.http.getModerators()])
+        credits += "<br><h2>Editors</h2>" + "<br> ".join([i["user_name"] for i in await self.http.getVIPs()])
+        if len(subs['t1']) > 0:
+            credits += "<br><h2>Lead Cast</h2>" + '<br> '.join(subs['t1'])
+        # add followers
+        credits += "<br><h2>Supporting Cast</h2>"
+        followers = await self.http.getChannelFollowers()
+        credits += '<br> '.join([f["user_name"] for f in followers])
+        async with aiofiles.open("templates/credits.html", 'r', encoding='utf-8') as f:
+            template = await f.read()
+            rendered = template.replace("{{ credits }}", credits)
+            return web.Response(text=rendered, content_type='text/html', charset='utf-8')
+
+    @route('/queue/ui')
+    async def queue_ui_route(self, request):
+        return await self.app.response_html('templates/queue_ui.html')
+
+    @route('/ads')
+    async def ads_route(self, request):
+        return await self.app.response_html('templates/ads.html')
+
     @command(name="chuck", aliases=["norris"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)
     async def chuck_cmd(self, user, channel, args):
@@ -147,35 +177,6 @@ class MyBot(
     @rate_limit(calls=1, period=60, warn_cooldown=30)
     async def lurk_cmd(self, user, channel, args):
         await self.send_chat("lurk mode activated!", channel["broadcaster_id"])
-
-    @route('/endcredits')
-    async def endcredits_route(self, request):
-        credits = "<br><h2>Director</h2>s4w3d0ff"
-        subs = self._cleanSubs(await self.http.getBroadcasterSubscriptions())
-        if len(subs['t3']) > 0:
-            credits += "<br><h2>Producers</h2>" + '<br> '.join(subs['t3'])
-        if len(subs['t2']) > 0:
-            credits += "<br><h2>Executive Producers</h2>" + '<br> '.join(subs['t2'])
-        credits += "<br><h2>Writers</h2>" + "<br> ".join([i["user_name"] for i in await self.http.getModerators()])
-        credits += "<br><h2>Editors</h2>" + "<br> ".join([i["user_name"] for i in await self.http.getVIPs()])
-        if len(subs['t1']) > 0:
-            credits += "<br><h2>Lead Cast</h2>" + '<br> '.join(subs['t1'])
-        # add followers
-        credits += "<br><h2>Supporting Cast</h2>"
-        followers = await self.http.getChannelFollowers()
-        credits += '<br> '.join([f["user_name"] for f in followers])
-        async with aiofiles.open("templates/credits.html", 'r', encoding='utf-8') as f:
-            template = await f.read()
-            rendered = template.replace("{{ credits }}", credits)
-            return web.Response(text=rendered, content_type='text/html', charset='utf-8')
-
-    @route('/queue/ui')
-    async def queue_ui_route(self, request):
-        return await self.app.response_html('templates/queue_ui.html')
-
-    @route('/ads')
-    async def ads_route(self, request):
-        return await self.app.response_html('templates/ads.html')
 
     @command(name="cheers", aliases=["bits"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)

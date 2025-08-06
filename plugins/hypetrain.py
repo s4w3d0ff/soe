@@ -38,7 +38,6 @@ class ChannelHypeTrainEnd(Alert):
                 "timestamp": self.timestamp,
                 "message_id": self.message_id,
                 "total": self.data["total"],
-                "is_golden_kappa_train": self.data["is_golden_kappa_train"],
                 "level": self.data["level"],
                 "cooldown_ends_at": self.data["cooldown_ends_at"],
                 "top_contributions": json.dumps(self.data["top_contributions"])

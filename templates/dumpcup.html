@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DumpCup</title>
+    <style>
+        body {
+            margin: 0 auto;
+            padding: 0px;
+        }
+        canvas {
+            cursor: pointer;
+            z-index: 1;
+            position: relative;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .button-container {
+            display: none;
+            gap: 10px;
+        }
+        #forground {
+            z-index: 2;
+            position: absolute;
+            top: 1102px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="1400" height="2000"></canvas>
+    <div class="button-container">
+        <button id="resetButton">Refresh Cup</button>
+        <button id="addBallButton">Add Ball</button>
+    </div>
+    <div id="forground">
+        <img src="/static/images/dumpster.png">
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="/static/js/dumpcup.js"></script>
+    <script src="/static/js/websocket-utils.js"></script>
+    <script>
+
+        const canvas = document.getElementById('canvas');
+        const polylineManager = new PolylineManager(canvas);
+        const physicsManager = new PhysicsManager(canvas, polylineManager);
+        let websocketConnection;
+        websocketConnection = createWebSocketConnection('/dumpcupws', (data) => {
+            physicsManager.createBall(data.properties, data.url);
+        });
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            physicsManager.updatePolylineBody();
+        });
+
+        document.getElementById('addBallButton').addEventListener('click', () => {
+            physicsManager.createBall(null, 'https://picsum.photos/300/100?random=4');
+        });
+
+        // Initial draw
+        polylineManager.drawPolyline(false);
+    </script>
+</body>
+</html>

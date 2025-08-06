@@ -1,6 +1,7 @@
 import copy
 import json
 import random
+import asyncio
 import logging
 from poolguy import Alert
 from .spotifyapi import duck_volume
@@ -280,7 +281,7 @@ class RaidNoto(Alert):
         raidFrom = event['user_login']
         img_url = event['profile_image_url']
         views = event['viewer_count']
-        await self.bot.http.sendChatMessage(f"{raidFrom} thank you for the {views} viewer raid!")
+        await self.bot.send_chat(f"{raidFrom} thank you for the {views} viewer raid!")
         #await self.bot.http.sendShoutout(to_broadcaster_id=event['user_id'])
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
@@ -293,8 +294,6 @@ class RaidNoto(Alert):
             await self.bot.obsws.set_source_text(self._text, "")
             for a in self._altscenes:
                 await self.bot.obsws.hide_source(a, self._scene)
-        
-
 
 class ChannelChatNotification(Alert):
     priority = 1
@@ -366,6 +365,12 @@ class ChannelChatNotification(Alert):
         if alert:
             if alert.store:
                 await alert.store()
-            await self.bot.ws.notification_handler._queue.put(alert)
+            else:
+                await self._store()
+            if not alert.queue_skip:
+                await self.bot.ws.notification_handler._queue.put(alert)
+            else:
+                asyncio.create_task(alert.process())
         else:
             await self._store()
+        
