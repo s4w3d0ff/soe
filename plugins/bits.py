@@ -45,9 +45,17 @@ class ChannelBitsUse(Alert):
         if self.data["type"] == "cheer":
             text, cheermotes = self.remove_cheermotes(self.data["message"])
             if len(cheermotes) > 1:
-                cheers = [frag["cheermote"]["bits"] for frag in cheermotes]
+                #sub_cheers = [frag["cheermote"]["bits"] for frag in cheermotes]
                 # handle specific cheermote handling here if we want to 
                 # this way we can handle split cheers
+                for frag in cheermotes:
+                    if hasattr(self.bot, 'dumpcup_queue') and hasattr(self.bot, 'get_cheermote'):
+                        url = await self.get_cheermote(frag["cheermote"]["prefix"])
+                        await self.bot.dumpcup_queue.put({
+                            "url": url,
+                            "properties": {"radius": 20, "density": 0.5}
+                        })
+
             alertK = None
             for k in [*cheer_cfg]:
                 if amount < int(k):
@@ -125,35 +133,23 @@ class TotemBot(TwitchBot):
         super().__init__(*args, **kwargs)
         self.totem_queue = asyncio.Queue()
         self.current_totem = []
+        self._first_totem_init = True
 
     @websocket('/totempolews')
     async def totempolews(self, ws, request):
-        logger.warning(f"Websocket connected: totempolews")
-        await self.ws_wait_for_twitch_login(ws)
         self.current_totem = await self.storage.get_token("totempole") or []
-        for item in self.current_totem:
+        async def loop(ws, request):
+            if not self._first_totem_init:
+                for item in self.current_totem:
+                    await asyncio.sleep(1)
+                    await ws.send_json({"imageUrl": item})
+                self._first_totem_init = False
+            update = await asyncio.wait_for(self.totem_queue.get(), timeout=15)
+            await ws.send_json({"imageUrl": update})
+            await self.storage.save_token("totempole", self.current_totem)
             await asyncio.sleep(1)
-            await ws.send_json({"imageUrl": item})
-        while not ws.closed:
-            try:
-                update = await asyncio.wait_for(self.totem_queue.get(), timeout=15)
-                await ws.send_json({"imageUrl": update})
-                await self.storage.save_token("totempole", self.current_totem)
-                await asyncio.sleep(1)
-            except ConnectionResetError:
-                logger.warning("WebSocket client forcibly disconnected during send")
-                break
-            except asyncio.TimeoutError:
-                try:
-                    await ws.ping()
-                except Exception as e:
-                    logger.warning(f"Ping failed: {e}")
-                    break
-            except Exception as e:
-                logger.error(f"Unexpected error in totempolews loop: {e}")
-                break
-        ws.exception()
-        logger.warning("totempolews connection closed")
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
+        self._first_totem_init = True
 
     @route('/totempole')
     async def totempole(self, request):

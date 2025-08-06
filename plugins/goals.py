@@ -2,7 +2,8 @@ import asyncio
 import json
 import time
 import logging
-from poolguy import TwitchBot, Alert, route, websocket
+from poolguy import TwitchBot, Alert
+from poolguy import route, websocket, command, rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ class GoalBot(TwitchBot):
         super().__init__(*args, **kwargs)
         self.goal_queue = asyncio.Queue()
         self.multi = goals_cfg.get("value_multipliers", {"t1": 250, "t2": 420, "t3": 2400, "bits": 1})
-        self.goals = goals_cfg.get("goals", {"monthly": 6942069})
+        self.goals = goals_cfg.get("goals", {"monthly": {"amount": 6942069, "description": "Become the best streamer ever!"}})
         self.bits_total = 0
         self.subs_total = {}
         self.last_sub_update = 0
@@ -46,13 +47,13 @@ class GoalBot(TwitchBot):
             "current_total": current_total,
             "goals": []
         }
-        for goal_name, goal_total in self.goals.items():
+        for goal_name, goal in self.goals.items():
             t = {
                 "goal_name": goal_name,
-                "goal_total": goal_total,
-                "percent_complete": (current_total / goal_total) * 100,
-                "total_needed": goal_total - current_total,
-                "bits_total_needed": goal_total - current_total
+                "goal_total": goal["amount"],
+                "percent_complete": (current_total / goal["amount"]) * 100,
+                "total_needed": goal["amount"] - current_total,
+                "bits_total_needed": goal["amount"] - current_total
             }
             for tier, amount in subs_total.items():
                 t[f"{tier}_total_needed"] = int(t["total_needed"] / self.multi[tier])
@@ -72,14 +73,33 @@ class GoalBot(TwitchBot):
         )
         await ws.send_json(out)
 
+    @command(name="facecam", aliases=["camera", "face", "monthly"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def face_cmd(self, user, channel, args):
+        current = self.bits_total + sum([v["value"] for v in self.subs_total.values()])
+        goal = self.goals["monthly"]["amount"]
+        percent = (current / goal) * 100
+        if percent > 100:
+            await self.send_chat("xqcL WE HIT THE MONTHLY GOAL! gachiWink")
+        else:
+            await self.send_chat("Binoculous My facecam will be activated when the monthly goal is reached! We are {percent}% there!", channel["broadcaster_id"])
+
+    @command(name="goals", aliases=["goal"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def goals_cmd(self, user, channel, args):
+        current = self.bits_total + sum([v["value"] for v in self.subs_total.values()])
+        out = ""
+        for name, goal in self.goals.items():
+            amount = goal["amount"]
+            desc = goal["description"]
+            percent = (current / amount) * 100
+            out += f"{name} [${amount / 100:.2f}]({percent:.2f}%): {desc}"
+            out += "_-_"
+        await self.send_chat(out[:-3])
+
+
     @websocket('/goalsws')
     async def goalsws(self, ws, request):
-        logger.warning(f"Websocket connected: goalsws")
-        await self.ws_wait_for_twitch_login(ws)
-        await self.send_update(ws, "subscription_count")
-        await asyncio.sleep(2.5)
-        await self.send_update(ws, "bits")
-        await asyncio.sleep(5.5)
         """
         {
             "bits_total": int,
@@ -101,25 +121,17 @@ class GoalBot(TwitchBot):
                 }]
         }
         """
-        while not ws.closed:
-            try:
-                update = await asyncio.wait_for(self.goal_queue.get(), timeout=15)
-                await self.send_update(ws, update['gtype'])
-                self.goal_queue.task_done()
-            except ConnectionResetError:
-                logger.warning("WebSocket client forcibly disconnected during send")
-                break
-            except asyncio.TimeoutError:
-                try:
-                    await ws.ping()
-                except Exception as e:
-                    logger.warning(f"Ping failed: {e}")
-                    break
-            except Exception as e:
-                logger.error(f"Unexpected error in goalsws loop: {e}")
-                break
-        ws.exception()
-        logger.warning("goalsws connection closed")
+        self.last_sub_update = 0
+        async def loop(ws, request):
+            if not self.last_sub_update:
+                await self.send_update(ws, "subscription_count")
+                await asyncio.sleep(2.5)
+                await self.send_update(ws, "bits")
+                await asyncio.sleep(5.5)
+            update = await asyncio.wait_for(self.goal_queue.get(), timeout=15)
+            await self.send_update(ws, update['gtype'])
+            self.goal_queue.task_done()
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
 
     @route('/goals')
     async def goalsroute(self, request):

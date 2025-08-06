@@ -2,6 +2,8 @@ import logging
 import aiohttp
 import asyncio
 import re
+
+from attr import has
 from poolguy import TwitchBot, Alert, route, websocket
 from poolguy.twitchws import MaxSizeDict
 
@@ -24,6 +26,22 @@ class ChatBot(TwitchBot):
         # stores channel badges
         self.badges = {}
         self.chat_history = MaxSizeDict(7)
+
+    async def load_cheermotes(self):
+        """ Load cheermotes from Twitch API and cache them in database """
+        data = await self.http.getCheermotes()
+        for cheermote in data:
+            await self.storage.insert("cheermotes", {
+                    "prefix": cheermote["prefix"],
+                    "url": cheermote["tiers"][0]["images"]["dark"]["static"]["4"]
+                })
+    
+    async def get_cheermote(self, prefix):
+        """ Get cheermote image URL by prefix from database"""
+        r = await self.storage.query("cheermotes", where="prefix = ?", params=(prefix,))
+        if not r:
+            return None
+        return r[0]["url"]
 
     async def setup_chat(self):
         """ init the emotes from 7TV and other sources, and get channel badges """
@@ -55,30 +73,32 @@ class ChatBot(TwitchBot):
 
     @websocket('/chatws')
     async def chat_ws(self, ws, request):
-        logger.warning(f"Websocket connected: chatws")
-        await self.ws_wait_for_twitch_login(ws)
-        while not ws.closed:
-            try:
-                await ws.send_json(self.chat_history)
-            except ConnectionResetError:
-                logger.warning("WebSocket client forcibly disconnected during send")
-                break
-            except asyncio.TimeoutError:
-                try:
-                    await ws.ping()
-                except Exception as e:
-                    logger.warning(f"Ping failed: {e}")
-                    break
-            except Exception as e:
-                logger.error(f"Unexpected error in chatws loop: {e}")
-                break
+        async def loop(ws, request):
+            await ws.send_json(self.chat_history)
             await asyncio.sleep(1)
-        ws.exception()
-        logger.warning("chatws connection closed")
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
 
     @route('/chat')
     async def chat_route(self, request):
         return await self.app.response_html('templates/chat.html')
+
+
+class DumpCupBot(TwitchBot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dumpcup_queue = asyncio.Queue()
+
+    @websocket('/dumpcupws')
+    async def _dumpcup_ws(self, ws, request):
+        async def loop(ws, request):
+            update = await asyncio.wait_for(self.dumpcup_queue.get(), timeout=15)
+            await ws.send_json(update)
+            self.dumpcup_queue.task_done()
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
+    
+    @route('/dumpcup')
+    async def _dumpcup(self, request):
+        return await self.app.response_html('templates/dumpcup.html')
 
 
 class BlackHoleBot(TwitchBot):
@@ -87,31 +107,15 @@ class BlackHoleBot(TwitchBot):
         self.blackhole_queue = asyncio.Queue()
 
     @websocket('/blackholews')
-    async def blackhole_ws(self, ws, request):
-        logger.warning("Blackhole websocket connected")
-        await self.ws_wait_for_twitch_login(ws)
-        while not ws.closed:
-            try:
-                update = await asyncio.wait_for(self.blackhole_queue.get(), timeout=15)
-                await ws.send_json(update)
-                self.blackhole_queue.task_done()
-            except ConnectionResetError:
-                logger.warning("WebSocket client forcibly disconnected during send")
-                break
-            except asyncio.TimeoutError:
-                try:
-                    await ws.ping()
-                except Exception as e:
-                    logger.warning(f"Ping failed: {e}")
-                    break
-            except Exception as e:
-                logger.error(f"Unexpected error in blackholews loop: {e}")
-                break
-        ws.exception()
-        logger.warning("Blackhole websocket connection closed")
+    async def _blackhole_ws(self, ws, request):
+        async def loop(ws, request):
+            update = await asyncio.wait_for(self.blackhole_queue.get(), timeout=15)
+            await ws.send_json(update)
+            self.blackhole_queue.task_done()
+        await self.ws_hold_connection(ws, request, loop_func=loop, wait_for_twitch=True)
     
     @route('/blackhole')
-    async def blackhole(self, request):
+    async def _blackhole(self, request):
         return await self.app.response_html('templates/blackhole.html')
 
 ############################=========---------
@@ -158,6 +162,16 @@ class ChannelChatMessage(Alert):
 
         return result
     
+    async def send_emotes_2_dump(self, fragments):
+        if not hasattr(self.bot, 'dumpcup_queue'):
+            return
+        for frag in fragments:
+            if frag['type'] == 'emote':
+                await self.bot.dumpcup_queue.put({
+                        "url": frag['url'],
+                        "properties": {"radius": 25, "density": 0.05},
+                     })
+    
     async def process(self):
         logger.info(f'[Chat] {self.data["chatter_user_name"]}: {self.data["message"]["text"]}')
         await self.bot.command_check(self.data)
@@ -189,6 +203,8 @@ class ChannelChatMessage(Alert):
                 for sf in subfrag:
                     message["fragments"].append(sf)
 
+        await self.send_emotes_2_dump(message["fragments"])
+
 
         if hasattr(self.bot, "blackhole_queue"):
             for frag in message["fragments"]:
@@ -197,6 +213,7 @@ class ChannelChatMessage(Alert):
                         "image": frag["url"],
                         "mass": ball_mass
                     })
+
         if hasattr(self.bot, 'chat_history'):
             self.bot.chat_history[self.data['message_id']] = message
 

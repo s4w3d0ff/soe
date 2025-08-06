@@ -96,7 +96,7 @@ class ChannelChannelPointsCustomRewardRedemptionAdd(Alert):
                 emotes = rewardConf['emotes']
                 for i in range(3):
                     await asyncio.sleep(0.3)
-                    await self.bot.http.sendChatMessage(f'{random.choice(emotes)} {random.choice(emotes)} {random.choice(emotes)}')
+                    await self.bot.send_chat(f'{random.choice(emotes)} {random.choice(emotes)} {random.choice(emotes)}')
             # Avatars____________
             case "monke" | "scav" | "kek":
                 await self.bot.obsws.hide_all_sources(rewardConf['scene'])
