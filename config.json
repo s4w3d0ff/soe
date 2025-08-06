@@ -63,12 +63,30 @@
 	},
 	"goals_cfg": {
 		"goals" : {
-			"monthly": 74000,
-			"25 cent meal": 100000,
-			"hooka sesh": 142000,
-			"paint vashtorr": 180000,
-			"desk build": 210000,
-			"moms pesto": 242000
+			"monthly": {
+				"amount": 74000,
+				"description": "My facecam will be turned on when we hit the monthly goal."
+			},
+			"50 cent meal": {
+				"amount": 142000,
+				"description": "I cook an entire meal for 50 cents on stream."
+			},
+			"hooka": {
+				"amount": 242000,
+				"description": "We have a hooka sesh on stream."
+			},
+			"vashtorr": {
+				"amount": 342000,
+				"description": "I paint Vashtorr the Arkifane."
+			},
+			"desk build": {
+				"amount": 420000,
+				"description": "I tear apart and rebuild my entire desk on stream."
+			},
+			"moms pesto": {
+				"amount": 542000,
+				"description": "I make pesto sauce from scratch using my moms custom recipe."
+			}
 		},
 		"value_multipliers": {
 			"t1": 250,
