@@ -15,10 +15,10 @@ class GoalProgressBar {
             setTimeout(() => this.setupWebSocket(), 5000);
         };
     }
-    formatAsDollars(cents) {
+    formatAsDollars(cents, decimals) {
         return (cents / 100).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
         });
     }
     handleUpdate(data) {
@@ -31,12 +31,12 @@ class GoalProgressBar {
 
         document.getElementById('progressFill').style.width = `${percent}%`;
 
-        document.getElementById('currentValueLabel').textContent = `Monthly Total: $${this.formatAsDollars(current)}`;
+        document.getElementById('currentValueLabel').textContent = `Monthly Total: $${this.formatAsDollars(current, 2)}`;
         document.getElementById('currentBitsLabel').textContent = `Bits: ${data.bits_total}`;
         document.getElementById('currentT1Label').textContent = `T1 Subs: ${data.subs_total.t1.amount}`;
         document.getElementById('currentT2Label').textContent = `T2 Subs: ${data.subs_total.t2.amount}`;
         document.getElementById('currentT3Label').textContent = `T3 Subs: ${data.subs_total.t3.amount}`;
-        document.getElementById('maxGoalLabel').textContent = `Top Goal: $${this.formatAsDollars(maxTotal)}`;
+        document.getElementById('maxGoalLabel').textContent = `Top Goal: $${this.formatAsDollars(maxTotal, 2)}`;
 
         // Clear old
         Array.from(bar.querySelectorAll('.milestone, .milestone-label, .milestone-connector')).forEach(e => e.remove());
@@ -59,7 +59,7 @@ class GoalProgressBar {
             // Label and connector
             const label = document.createElement('div');
             label.className = 'milestone-label';
-            label.textContent = `${goal.goal_name} ($${this.formatAsDollars(goal.goal_total)})`;
+            label.textContent = `${goal.goal_name}: $${this.formatAsDollars(goal.goal_total, 0)}`;
 
             // Highlight label if reached
             if (goal.percent_complete >= 100) {
@@ -73,7 +73,7 @@ class GoalProgressBar {
             // Offset so labels don't overlap vertically
             let labelTop = -89;
             for (let used of usedTops) {
-                if (Math.abs(used.left - left) < 800) {
+                if (Math.abs(used.left - left) < 666) {
                     labelTop += 90;
                     ms.style.top = `calc(${labelTop}% )`;
                 }
