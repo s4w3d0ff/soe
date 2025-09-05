@@ -2,7 +2,7 @@ import json
 import random
 import asyncio
 import logging
-from poolguy.storage import loadJSON
+from poolguy.core.storage import loadJSON
 from poolguy import Alert
 from .spotifyapi import duck_volume
 
