@@ -22,12 +22,14 @@
 			"clips:edit",
 			"moderator:manage:banned_users",
 			"moderator:manage:shoutouts",
-			"moderator:read:followers"
+			"moderator:read:followers",
+			"moderator:read:suspicious_users"
 		],
 		"browser": {"librewolf": "C:\\Program Files\\LibreWolf\\librewolf.exe"},
 		"channels": {
 			"channel.channel_points_custom_reward_redemption.add": null,
 			"channel.ban": null,
+			"channel.suspicious_user.message": null,
 			"channel.follow": null,
 			"channel.bits.use": null,
 			"channel.chat.notification": null,
@@ -66,26 +68,6 @@
 			"monthly": {
 				"amount": 74000,
 				"description": "My facecam will be turned on when we hit the monthly goal."
-			},
-			"50 cent meal": {
-				"amount": 142000,
-				"description": "I cook an entire meal for 50 cents on stream."
-			},
-			"hooka": {
-				"amount": 242000,
-				"description": "We have a hooka sesh on stream."
-			},
-			"vashtorr": {
-				"amount": 342000,
-				"description": "I paint Vashtorr the Arkifane."
-			},
-			"desk build": {
-				"amount": 420000,
-				"description": "I tear apart and rebuild my entire desk on stream."
-			},
-			"moms pesto": {
-				"amount": 542000,
-				"description": "I make pesto sauce from scratch using my moms custom recipe."
 			}
 		},
 		"value_multipliers": {

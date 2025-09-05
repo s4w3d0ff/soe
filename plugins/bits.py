@@ -2,7 +2,7 @@ import json
 import random
 import logging
 import asyncio
-from poolguy.storage import loadJSON
+from poolguy.core.storage import loadJSON
 from poolguy import TwitchBot, Alert, websocket, route, command, rate_limit
 from .spotifyapi import duck_volume
 from .tts import generate_speech, VOICES
@@ -37,8 +37,9 @@ class ChannelBitsUse(Alert):
         return result.strip(), cheermotes
 
     async def process(self):
-        logger.info(f"[Bot] Bits: \n{json.dumps(self.data, indent=2)}")
+        logger.debug(f"[Bot] Bits: \n{json.dumps(self.data, indent=2)}")
         amount = int(self.data['bits'])
+        logger.info(f"{self.data['user_login']} sent {amount} bits")
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(amount, 'bits')
@@ -66,6 +67,9 @@ class ChannelBitsUse(Alert):
                 if int(alertK) == 25:
                     await self._whatever()
                     return
+                if int(alertK) == 35:
+                    await self._typeshit()
+                    return
                 if int(alertK) == 69:
                     await self._fire()
                     return
@@ -87,15 +91,15 @@ class ChannelBitsUse(Alert):
 
     async def _whatever(self):
        source = f'whatever{random.randint(1,4)}'
-       await self.bot.obsws.show_source(source, bit_scene)
-       await asyncio.sleep(2)
-       await self.bot.obsws.hide_source(source, bit_scene)
-    
+       await self.bot.obsws.show_and_wait(source, bit_scene)
+
+    async def _typeshit(self):
+       source = f'typeshit{random.randint(1,17)}'
+       await self.bot.obsws.show_and_wait(source, "[S] Typeshit")
+
     async def _fire(self):
        source = f'firebutt{random.randint(1,17)}'
-       await self.bot.obsws.show_source(source, "[S] Firebutt")
-       await asyncio.sleep(8)
-       await self.bot.obsws.hide_source(source, "[S] Firebutt")
+       await self.bot.obsws.show_and_wait(source, "[S] Firebutt")
 
     @duck_volume(volume=40)
     async def _process_alert(self, amount, alertK, text):

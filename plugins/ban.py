@@ -56,9 +56,7 @@ class ChannelBan(Alert):
         #dur = "permanently banned" if self.data['is_permanent'] else "timed out"
         #reason = self.data['reason']
         await self.bot.send_chat(f'Get rekt {name} Modding')
-        await self.bot.obsws.show_source(source, scene)
-        await asyncio.sleep(18)
-        await self.bot.obsws.hide_source(source, scene)
+        await self.bot.obsws.show_and_wait(source, scene)
         await asyncio.sleep(2)
         await self.bot.obsws.set_source_settings("banpic", {"file": defaultpic})
         await self.bot.obsws.set_source_text("banname", "some child")
@@ -94,7 +92,4 @@ class ChannelSuspiciousUserMessage(Alert):
     async def process(self):
         if not time.time() - self.last > self.cooldown:
             return
-        await self.bot.obsws.show_source("amongsus", "[S] Videos")
-        await asyncio.sleep(3)
-        await self.bot.obsws.hide_source("amongsus", "[S] Videos")
-        self.last = time.time()
+        await self.bot.obsws.show_and_wait("amongsus", "[S] Videos")

@@ -2,8 +2,39 @@ import logging
 import asyncio
 import simpleobsws
 from poolguy import TwitchBot, route
+import subprocess
 
 logger = logging.getLogger(__name__)
+
+def get_media_duration(file_path):
+    """
+    Returns the duration (in seconds as a string) of the media file using ffprobe.
+    If ffprobe fails, returns None.
+
+    Args:
+        file_path (str): Path to the media file.
+
+    Returns:
+        str or None: Duration in seconds, or None if ffprobe fails.
+    """
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-i", file_path,
+                "-show_entries", "format=duration",
+                "-v", "quiet",
+                '-of', 'csv=p=0'
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            check=True
+        )
+        duration = result.stdout.strip()
+        return duration if duration else None
+    except Exception:
+        return None
 
 class OBSController:
     def __init__(self, host, port, password, ignore_media=None, media_scenes=None, status_config=None):
@@ -150,35 +181,16 @@ class OBSController:
             if input_name in self.media_scenes[scene]:
                 await self.hide_source(input_name, scene)
                 break
-        if self.wait_for == input_name:
-            try:
-                self.wait_for_event.set()
-            except:
-                pass
 
-    async def show_and_wait(self, source_name, scene_name, wait_for=None):
-        """ Show a source, then hold and wait for 'wait_for' media to end """
-        await asyncio.sleep(0.5)
-        self.wait_for = wait_for or source_name
-        self.wait_for_event = asyncio.Event()
+    async def show_and_wait(self, source_name, scene_name):
+        source = await self.get_input_settings(source_name)
+        dur = float(get_media_duration(source['inputSettings']['local_file']))
         await self.show_source(source_name, scene_name)
-        logger.warning(f"Waiting on: {self.wait_for}")
-        await self.wait_for_event.wait()
-        self.wait_for = None
-        #await self.hide_source(source_name, scene_name)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(dur + 0.2)
+        await self.hide_source(source_name, scene_name)
     
     async def clear_wait(self):
-        if self.wait_for:
-            for scene in self.media_scenes:
-                if self.wait_for in self.media_scenes[scene]:
-                    await self.hide_source(self.wait_for, scene)
-                    break
-            self.wait_for = None
-        if self.wait_for_event:
-            self.wait_for_event.set()
-        await asyncio.sleep(0.5)
-
+        pass
 #==========================================================================================
 # OBSBot =================================================================================
 #==========================================================================================

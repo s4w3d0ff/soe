@@ -5,7 +5,7 @@ import logging
 from aiohttp import web, ClientSession
 from plugins.chat import BlackHoleBot
 from plugins.dcord import DiscordBot
-from poolguy.storage import loadJSON
+from poolguy.core.storage import loadJSON
 from poolguy import command, rate_limit, route, CommandBot
 from poolguy.twitch import UIBot
 from plugins import (
@@ -67,11 +67,11 @@ class MyBot(
     async def refresh_obs_scenes(self):
         await self.obsws.hide_source(source_name="Goals", scene_name="[S] Goals")
         await self.obsws.hide_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
-        #await self.obsws.hide_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        await self.obsws.hide_source(source_name="DumpCup [SOE]", scene_name="[S] Dumpster Chat")
         await self.obsws.hide_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
         await asyncio.sleep(2)
         await self.obsws.show_source(source_name="NewChat", scene_name="[S] Dumpster Chat")
-        #await self.obsws.show_source(source_name="EmoteOrbiter", scene_name="[S] Backgrounds")
+        await self.obsws.show_source(source_name="DumpCup [SOE]", scene_name="[S] Dumpster Chat")
         await self.obsws.show_source(source_name="Totempole [SOE]", scene_name="[S] Dumpster Chat")
         await self.obsws.show_source(source_name="Goals", scene_name="[S] Goals")
 
