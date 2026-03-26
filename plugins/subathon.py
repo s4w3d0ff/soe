@@ -242,11 +242,11 @@ class SubathonBot(TwitchBot):
         else:
             remaining_time = f"{int(remaining_time)} seconds"
         if self.subathon.timer._paused:
-            await self.send_chat(f"Subathon is paused with {remaining_time} remaining.", broadcaster_id=channel["broadcaster_id"])
+            await self.send_chat(f"Subathon is paused with {remaining_time} remaining.", channel["broadcaster_id"])
             return
         if self.subathon.is_running():
-            await self.send_chat(f"Subathon is currently running with {remaining_time} left!", broadcaster_id=channel["broadcaster_id"])
+            await self.send_chat(f"Subathon is currently running with {remaining_time} left!", channel["broadcaster_id"])
             txt = "".join(
                 [f"[ {k} = {v} second(s) ]" if v < 60 else f"[ {k} = {int(v / 60)} minute(s) and {int(v % 60)} second(s) ]" for k, v in self.subathon.value_multipliers.items()]
                 )
-            await self.send_chat(txt, broadcaster_id=channel["broadcaster_id"])
+            await self.send_chat(txt, channel["broadcaster_id"])

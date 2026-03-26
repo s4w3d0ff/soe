@@ -173,6 +173,11 @@ class MyBot(
     async def discord_cmd(self, user, channel, args):
         await self.send_chat("https://discord.gg/DhwXjT7mJw", channel["broadcaster_id"])
 
+    @command(name="merch", aliases=["shop"])
+    @rate_limit(calls=1, period=60, warn_cooldown=30)
+    async def merch_cmd(self, user, channel, args):
+        await self.send_chat("https://shop.s4w3d0ff.com", channel["broadcaster_id"])
+
     @command(name="lurk", aliases=["lurking"])
     @rate_limit(calls=1, period=60, warn_cooldown=30)
     async def lurk_cmd(self, user, channel, args):

@@ -186,8 +186,9 @@ class OBSController:
         source = await self.get_input_settings(source_name)
         dur = float(get_media_duration(source['inputSettings']['local_file']))
         await self.show_source(source_name, scene_name)
-        await asyncio.sleep(dur + 0.2)
+        await asyncio.sleep(dur + 0.5)
         await self.hide_source(source_name, scene_name)
+        await asyncio.sleep(1)
     
     async def clear_wait(self):
         pass

@@ -64,6 +64,9 @@ class ChannelBitsUse(Alert):
                 else:
                     alertK = k
             if alertK:
+                if int(alertK) == 10:
+                    await self._sniffs()
+                    return
                 if int(alertK) == 25:
                     await self._whatever()
                     return
@@ -72,6 +75,9 @@ class ChannelBitsUse(Alert):
                     return
                 if int(alertK) == 69:
                     await self._fire()
+                    return
+                if int(alertK) == 888:
+                    await self._kit(amount, alertK, text)
                     return
                 if int(alertK) == song_skip_amount:
                     if hasattr(self.bot, 'spotify'):
@@ -88,6 +94,9 @@ class ChannelBitsUse(Alert):
                     self.bot.current_totem.append(url)
                     self.bot.current_totem = self.bot.current_totem[-5:]
 
+    async def _sniffs(self):
+       source = f'sniffs{random.randint(1,8)}'
+       await self.bot.obsws.show_and_wait(source, "[S] Sniffs")
 
     async def _whatever(self):
        source = f'whatever{random.randint(1,4)}'
@@ -100,6 +109,21 @@ class ChannelBitsUse(Alert):
     async def _fire(self):
        source = f'firebutt{random.randint(1,17)}'
        await self.bot.obsws.show_and_wait(source, "[S] Firebutt")
+
+    async def _kit(self, amount, alertK, text):
+        usr = str(self.data['user_name'])
+        txt = cheer_cfg[alertK]['text'].replace("{user}", usr).replace("{amount}", str(amount))
+        await self.bot.obsws.set_source_text(bit_text, ' '+txt)
+        for a in bit_altsources:
+            await self.bot.obsws.show_source(a, bit_scene)
+        source = f'kit{random.randint(1,9)}'
+        await self.bot.obsws.show_and_wait(source, bit_scene)
+        for a in bit_altsources:
+            await self.bot.obsws.hide_source(a, bit_scene)
+        if text and amount >= tts_limit:
+            voice = random.choice(list(VOICES.keys()))
+            await generate_speech(text, tts_path, voice)
+            await self.bot.obsws.show_and_wait(tts_source, bit_scene)
 
     @duck_volume(volume=40)
     async def _process_alert(self, amount, alertK, text):

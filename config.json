@@ -68,6 +68,14 @@
 			"monthly": {
 				"amount": 74000,
 				"description": "My facecam will be turned on when we hit the monthly goal."
+			},
+			"comfort": {
+				"amount": 100000,
+				"description": "My bills are paid and I have a bit extra"
+			},
+			"safety net": {
+				"amount": 160000,
+				"description": "I have more than I need and enough to cover next months bills."
 			}
 		},
 		"value_multipliers": {

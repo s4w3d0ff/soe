@@ -54,10 +54,9 @@ class DiscordBot(TwitchBot):
             url=f"https://twitch.tv/{user['login']}"
         )
         embed.set_thumbnail(url=f"https://static-cdn.jtvnw.net/ttv-boxart/{chan['game_id']}-150x200.jpg")
-        embed.set_image(url=user['profile_image_url'])
         # Mention everyone in a non-embed message since @everyone doesn't ping from embed descriptions
         await channel.send(
-            f"@everyone {user['display_name']} just went live! https://twitch.tv/{user['login']}", 
+            f"@everyone", 
             embed=embed
         )
 

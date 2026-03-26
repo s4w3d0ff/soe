@@ -181,14 +181,16 @@ class GiftpaidupgradeNoto(Alert):
         name = "Anonymous" if self.data['chatter_is_anonymous'] else self.data['chatter_user_name']
         sys_message = self.data['system_message']
         event = self.data[notice_type]
-        tier = event['sub_tier'][0]
+        gifter = "Anonymous" if event['gifter_is_anonymous'] else event['gifter_user_name']
+        #tier = event['sub_tier'][0]
+        tier = 1
         if hasattr(self.bot, 'subathon'):
             if self.bot.subathon.is_running():
                self.bot.subathon.add_time(1, f't{tier}')
         if hasattr(self.bot, 'obsws'):
             await self.bot.obsws.set_source_text(
                     self._text, 
-                    f" {name} upgraded from a gift sub to a paid tier {tier} sub!"
+                    f" {name} upgraded the gift sub from {gifter} to a paid sub!"
                 )
             for a in self._altscenes:
                 await self.bot.obsws.show_source(a, self._scene)

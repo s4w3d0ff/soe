@@ -48,19 +48,23 @@ class ChannelBan(Alert):
         logger.debug(f"[Alert] Ban: \n{json.dumps(self.data, indent=2)}")
         if self.data["moderator_user_login"] in ignorelist:
             return
-        #scene = random.choice(["[S] TuckerBan", "[S] PacificBan"])
-        source = "[S] TuckerBan"
         name = self.data['user_name']
         await self.bot.obsws.set_source_settings("banpic", {"file": await self.getUserPic(self.data["user_id"])})
         await self.bot.obsws.set_source_text("banname", self.data['user_name'])
         #dur = "permanently banned" if self.data['is_permanent'] else "timed out"
         #reason = self.data['reason']
         await self.bot.send_chat(f'Get rekt {name} Modding')
-        await self.bot.obsws.show_and_wait(source, scene)
-        await asyncio.sleep(2)
+        await self.bot.obsws.show_source("banpic", "[S] TuckerBan")
+        await self.bot.obsws.show_source("banname", "[S] TuckerBan")
+        await self.bot.obsws.show_source("[S] TuckerBan", "[S] Banned")
+        await self.bot.obsws.show_and_wait("TuckerBan", "[S] TuckerBan")
+        await self.bot.obsws.hide_source("banpic", "[S] TuckerBan")
+        await self.bot.obsws.hide_source("banname", "[S] TuckerBan")
+        await asyncio.sleep(1)
+        await self.bot.obsws.hide_source("[S] TuckerBan", "[S] Banned")
         await self.bot.obsws.set_source_settings("banpic", {"file": defaultpic})
         await self.bot.obsws.set_source_text("banname", "some child")
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
 #######################################=========---------
 ### channel.suspicious_user.message ###=============---------
@@ -82,9 +86,9 @@ class ChannelSuspiciousUserMessage(Alert):
                 "user_id": self.data["user_id"],
                 "user_login": self.data["user_login"],
                 "low_trust_status": self.data["low_trust_status"],
-                "shared_ban_channel_ids": self.data["shared_ban_channel_ids"],
-                "types": self.data["types"],
-                "ban_evasion_evaluation": self.data["ban_evasion_evaluation"],
+                "shared_ban_channel_ids": json.dumps(self.data["shared_ban_channel_ids"]),
+                "types": json.dumps(self.data["types"]),
+                "ban_evasion_evaluation": json.dumps(self.data["ban_evasion_evaluation"]),
                 "message": json.dumps(self.data["message"])
             }
         )

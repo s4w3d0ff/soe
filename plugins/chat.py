@@ -61,15 +61,19 @@ class ChatBot(TwitchBot):
             url = sevenTVurl+"emote-sets/global"
         else:
             url = sevenTVurl+f"users/twitch/{user_id}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                rmotes = await response.json()
-                if 'emotes' in rmotes:
-                    emotes = rmotes['emotes']
-                else:
-                    emotes = rmotes['emote_set']['emotes']
-                return {e['name']: f"{sevenTVcdnurl}{e['id']}/4x.webp" for e in emotes}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    rmotes = await response.json()
+                    if 'emotes' in rmotes:
+                        emotes = rmotes['emotes']
+                    else:
+                        emotes = rmotes['emote_set']['emotes']
+                    return {e['name']: f"{sevenTVcdnurl}{e['id']}/4x.webp" for e in emotes}
+        except Exception as e:
+            logger.error(f"Failed to fetch 7tv emotes: {e}")
+            return {}
 
     @websocket('/chatws')
     async def chat_ws(self, ws, request):

@@ -20,7 +20,7 @@ class GoalBot(TwitchBot):
     async def get_total_cheers(self, days_back=30):
         t = time.time()
         limit = 86400*days_back
-        alerts = await self.storage.query('channel_bits_use', 'WHERE CAST(timestamp AS REAL) >= ?', (t-limit,))
+        alerts = await self.storage.query('channel_bits_use', 'CAST(timestamp AS REAL) >= ?', (t-limit,))
         total_bits = 0
         for alert in alerts:
             total_bits += int(alert['bits'])
