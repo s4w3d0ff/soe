@@ -1,8 +1,18 @@
 {
+	"10": {
+		"source": "sniffs",
+		"name": "sniffs",
+		"text": "sniff"
+	},
 	"25": {
 		"source": "whatever",
 		"name": "whatever",
 		"text": "WHATEVER!"
+	},
+	"35": {
+		"source": "typeshit",
+		"name": "typeshit",
+		"text": "typeshit"
 	},
 	"50": {
 		"source": "Coffee",
@@ -132,6 +142,11 @@
 	"777": {
 		"source": "sniff",
 		"name": "sniff ASMR",
+		"text": "{user} dropped {amount} bits!"
+	},
+	"888": {
+		"source": "kit",
+		"name": "kitchen sesh",
 		"text": "{user} dropped {amount} bits!"
 	},
 	"999": {
